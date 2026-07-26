@@ -1,0 +1,17 @@
+{
+  "name": "BoloTracker - Gestión de Bolos y Músicos",
+  "short_name": "BoloTracker",
+  "description": "App personal de gestión de bolos, actuaciones, cobros y gasolina para músicos",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#12131C",
+  "theme_color": "#12131C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

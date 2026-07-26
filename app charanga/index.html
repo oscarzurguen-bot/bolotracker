@@ -15,7 +15,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="styles.css?v=7.7.0">
+  <link rel="stylesheet" href="styles.css?v=7.9.0">
 </head>
 <body>
   <div class="app-container">
@@ -136,12 +136,6 @@
           </div>
         </div>
 
-        <div class="chart-box">
-          <h3>Desglose de Instrumentos tocados</h3>
-          <div class="instrument-stats-list" id="instrument-stats">
-            <!-- Estadísticas por instrumento -->
-          </div>
-        </div>
       </section>
 
       <!-- VISTA 3: PASAPORTE DE PUEBLOS -->
@@ -206,18 +200,6 @@
           </div>
         </div>
 
-        <!-- MODO DE VISUALIZACIÓN -->
-        <div class="settings-card">
-          <h3>☀️ Modo de Visualización</h3>
-          <p class="settings-desc">Elige la apariencia visual de la aplicación (Modo Oscuro o Modo Claro):</p>
-          <div class="setting-row" style="margin-top: 6px;">
-            <span>Tema actual: <strong id="theme-status-text">Oscuro 🌙</strong></span>
-            <button type="button" id="btn-settings-theme-toggle" class="btn btn-outline btn-sm">
-              Cambiar a Modo Claro ☀️
-            </button>
-          </div>
-        </div>
-
         <div class="settings-card">
           <h3>Gestión de Datos</h3>
           <p class="settings-desc">Guarda una copia de seguridad de tus bolos y ensayos o restaura tus datos en otro móvil.</p>
@@ -245,18 +227,6 @@
           <div class="setting-row" style="margin-top: 6px;">
             <label for="gas-rate-input" style="font-weight: 500; font-size: 14px;">Precio por Kilómetro (€/km):</label>
             <input type="number" id="gas-rate-input" value="0.30" step="0.05" min="0" class="form-input short-input" style="max-width: 100px; text-align: center; font-weight: 700; color: var(--primary-gold);">
-          </div>
-        </div>
-        <!-- GESTIÓN DE MIS INSTRUMENTOS QUE TOCO -->
-        <div class="settings-card">
-          <h3>🎺 Instrumentos que toco</h3>
-          <p class="settings-desc">Toca sobre los instrumentos que tú tocas para activarlos (✅). Sólo los activados aparecerán al crear o editar tus bolos:</p>
-          <div id="settings-instruments-toggle-grid" class="instruments-toggle-grid" style="margin-top: 8px;">
-            <!-- Renderizado dinámico desde state.allInstruments / state.myInstruments -->
-          </div>
-          <div class="member-input-row" style="margin-top: 10px; display: flex; gap: 8px;">
-            <input type="text" id="input-new-instrument-name" class="form-input" placeholder="Otro instrumento (ej: Tuba, Clarinete)..." style="flex: 1;">
-            <button type="button" id="btn-add-custom-instrument" class="btn btn-secondary btn-sm" style="white-space: nowrap;">+ Añadir</button>
           </div>
         </div>
 
@@ -373,90 +343,6 @@
             </select>
           </div>
 
-          <!-- SECCIÓN INSTRUMENTO -->
-          <div class="form-group">
-            <label>Instrumento que voy a tocar ese día</label>
-            <div id="instrument-radio-group" class="instrument-selector">
-              <label class="radio-card">
-                <input type="radio" name="instrument" value="Bombo">
-                <div class="radio-content">
-                  <span class="radio-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="display:inline-block; vertical-align:middle;">
-                      <path d="M5.5 4.5 C8.5 4.2 12.5 4.5 15.5 3.5 L15.5 20.5 C12.5 19.5 8.5 19.8 5.5 19.5 C2.8 16.5 2.8 7.5 5.5 4.5 Z" fill="#C46D2E" stroke="#5C2508" stroke-width="1.1"/>
-                      <path d="M8.5 4.2 C11 4.1 13.5 4.3 15.5 3.5 L15.5 20.5 C13.5 19.7 11 20 8.5 19.8 Z" fill="#E58E44" opacity="0.45"/>
-                      <ellipse cx="15.5" cy="12" rx="6.5" ry="8.5" fill="none" stroke="#5C2508" stroke-width="1.8"/>
-                      <ellipse cx="15.5" cy="12" rx="5.5" ry="7.5" fill="#FAFAFA" stroke="#CBD5E1" stroke-width="1"/>
-                      <ellipse cx="15.5" cy="12" rx="4.2" ry="6.2" fill="none" stroke="#E2E8F0" stroke-width="0.8" stroke-dasharray="2 1.5"/>
-                      <path d="M5.5 4.5 C3.2 7.2 3.2 16.8 5.5 19.5" fill="none" stroke="#5C2508" stroke-width="1.4"/>
-                      <rect x="14.7" y="3" width="1.6" height="1.4" rx="0.4" fill="#E2E8F0" stroke="#475569" stroke-width="0.6"/>
-                      <rect x="14.7" y="19.6" width="1.6" height="1.4" rx="0.4" fill="#E2E8F0" stroke="#475569" stroke-width="0.6"/>
-                      <rect x="21" y="11.3" width="1.4" height="1.6" rx="0.4" fill="#E2E8F0" stroke="#475569" stroke-width="0.6"/>
-                      <rect x="9" y="11.3" width="1.4" height="1.6" rx="0.4" fill="#E2E8F0" stroke="#475569" stroke-width="0.6"/>
-                      <rect x="10.8" y="5.2" width="1.4" height="1.4" rx="0.4" fill="#E2E8F0" stroke="#475569" stroke-width="0.6"/>
-                      <rect x="10.8" y="17.4" width="1.4" height="1.4" rx="0.4" fill="#E2E8F0" stroke="#475569" stroke-width="0.6"/>
-                      <line x1="2" y1="22" x2="8" y2="13.5" stroke="#B45309" stroke-width="2.2" stroke-linecap="round"/>
-                      <circle cx="8" cy="13.5" r="2.5" fill="#FFFBEB" stroke="#78350F" stroke-width="1"/>
-                    </svg>
-                  </span>
-                  <span class="radio-label">Bombo</span>
-                </div>
-              </label>
-              <label class="radio-card">
-                <input type="radio" name="instrument" value="Caja" checked>
-                <div class="radio-content">
-                  <span class="radio-icon">🥁</span>
-                  <span class="radio-label">Caja</span>
-                </div>
-              </label>
-              <label class="radio-card">
-                <input type="radio" name="instrument" value="Trompeta">
-                <div class="radio-content">
-                  <span class="radio-icon">🎺</span>
-                  <span class="radio-label">Trompeta</span>
-                </div>
-              </label>
-              <label class="radio-card">
-                <input type="radio" name="instrument" value="Saxofón">
-                <div class="radio-content">
-                  <span class="radio-icon">🎷</span>
-                  <span class="radio-label">Saxo</span>
-                </div>
-              </label>
-              <label class="radio-card">
-                <input type="radio" name="instrument" value="Trombón">
-                <div class="radio-content">
-                  <span class="radio-icon">
-                    <img src="trombon.png" alt="Trombón" style="width:32px; height:32px; object-fit:contain; display:inline-block; vertical-align:middle;">
-                  </span>
-                  <span class="radio-label">Trombón</span>
-                </div>
-              </label>
-              <label class="radio-card">
-                <input type="radio" name="instrument" value="Piano">
-                <div class="radio-content">
-                  <span class="radio-icon">🎹</span>
-                  <span class="radio-label">Piano</span>
-                </div>
-              </label>
-              <label class="radio-card">
-                <input type="radio" name="instrument" value="Bombardino">
-                <div class="radio-content">
-                  <span class="radio-icon">
-                    <img src="bombardino.png" alt="Bombardino" style="width:28px; height:28px; object-fit:contain; display:inline-block; vertical-align:middle;">
-                  </span>
-                  <span class="radio-label">Bombardino</span>
-                </div>
-              </label>
-              <label class="radio-card">
-                <input type="radio" name="instrument" value="Aún no sé">
-                <div class="radio-content">
-                  <span class="radio-icon">❓</span>
-                  <span class="radio-label">Aún no sé</span>
-                </div>
-              </label>
-            </div>
-          </div>
-
           <!-- SECCIÓN DESPLAZAMIENTO Y COCHE -->
           <div class="form-card-box">
             <div class="toggle-row">
@@ -559,7 +445,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-  <script src="app.js?v=8.4.0"></script>
+  <script src="app.js?v=8.6.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

@@ -469,7 +469,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="pill-info pill-charanga">🎶 ${escapeHtml(charangaName)}</span>
             ${bolo.type ? `<span class="pill-info">🎉 ${escapeHtml(bolo.type)}</span>` : ''}
             ${bolo.hours ? `<span class="pill-info">⏱️ ${bolo.hours}h</span>` : ''}
-            <span class="pill-info pill-instrument">${instrumentIcon} ${escapeHtml(bolo.instrument || 'Caja')}</span>
             ${bolo.hasCar ? `<span class="pill-info pill-car">🚗 ${bolo.km} km (${formatCurrency(gasMoney)})</span>` : ''}
             ${bolo.members && bolo.members.length > 0 ? `<span class="pill-info">👥 ${bolo.members.length} componentes</span>` : ''}
           </div>
@@ -1141,9 +1140,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('bolo-id').value = '';
       document.getElementById('bolo-date').value = prefillDate || new Date().toISOString().split('T')[0];
 
-      // Reset radio charanga e instrumento
+      // Reset radio charanga
       renderCharangaRadios();
-      renderInstrumentRadios();
 
       const otherContainer = document.getElementById('charanga-other-container');
       if (otherContainer) otherContainer.classList.add('hidden');
@@ -1212,8 +1210,7 @@ document.addEventListener('DOMContentLoaded', () => {
         charanga = otherText || 'Otra Charanga';
       }
 
-      const instRadioChecked = document.querySelector('input[name="instrument"]:checked');
-      const instrument = instRadioChecked ? instRadioChecked.value : 'Caja';
+      const instrument = '';
       const hasCar = document.getElementById('bolo-has-car').checked;
       const km = hasCar ? (parseFloat(document.getElementById('bolo-km').value) || 0) : 0;
       const notes = document.getElementById('bolo-notes').value.trim();
@@ -1299,7 +1296,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="detail-row"><span class="detail-icon">📅</span> <strong>Fecha:</strong> ${formatDateStr(bolo.date)}</div>
         ${timeInfo ? `<div class="detail-row"><span class="detail-icon">⏱️</span> <strong>Horario:</strong> ${timeInfo}</div>` : ''}
         <div class="detail-row"><span class="detail-icon">💰</span> <strong>Caché:</strong> ${formatCurrency(parseFloat(bolo.price) || 0)}</div>
-        <div class="detail-row"><span class="detail-icon">${getInstrumentIcon(bolo.instrument)}</span> <strong>Instrumento:</strong> ${escapeHtml(bolo.instrument)}</div>
 
         ${bolo.hasCar ? `
           <div class="detail-row" style="color: var(--status-cyan);">

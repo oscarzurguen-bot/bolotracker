@@ -1663,7 +1663,7 @@
       loginBtn.addEventListener('click', handleGoogleLogin);
     }
     if (nativeGooglePopupBtn) {
-      nativeGooglePopupBtn.addEventListener('click', executeNativeGoogleLogin);
+      nativeGooglePopupBtn.addEventListener('click', handleGoogleLogin);
     }
     if (confirmGoogleLoginBtn) {
       confirmGoogleLoginBtn.addEventListener('click', executeGoogleLoginFromModal);
@@ -1672,10 +1672,11 @@
       logoutBtn.addEventListener('click', handleGoogleLogout);
     }
     if (manualSyncBtn) {
-      manualSyncBtn.addEventListener('click', () => {
+      manualSyncBtn.addEventListener('click', async () => {
         if (cloudSync.user) {
-          syncFromCloud();
-          alert(`¡Sincronización de la cuenta (${cloudSync.user.email}) completada!`);
+          await syncToCloud();
+          await syncFromCloud();
+          alert(`✅ ¡Sincronización en la nube completada!\nCuenta: ${cloudSync.user.email}`);
         } else {
           alert('Debes conectar tu cuenta de Google primero.');
         }

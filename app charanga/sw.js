@@ -1,20 +1,21 @@
-const CACHE_NAME = 'bolotracker-v9.5.0';
+const CACHE_NAME = 'bolotracker-v9.6.0';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=8.8.0',
-  './app.js?v=9.5.0',
+  './styles.css?v=8.9.0',
+  './app.js?v=9.6.0',
   './manifest.json',
   './logo.png',
   './trombon.png',
-  './bombardino.png',
-  'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap'
+  './bombardino.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
+    }).catch(err => {
+      console.log('SW install cache warning:', err);
     })
   );
   self.skipWaiting();
@@ -36,11 +37,15 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Estrategia Network First con Fallback a Cache Offline
+  // Solo interceptar peticiones GET del propio dominio
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        if (response && response.status === 200 && event.request.method === 'GET') {
+        if (response && response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
@@ -53,7 +58,7 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          if (event.request.headers.get('accept').includes('text/html')) {
+          if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
             return caches.match('./index.html');
           }
         });

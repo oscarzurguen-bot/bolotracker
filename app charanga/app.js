@@ -33,12 +33,16 @@
     initTheme();
     populateTimeSelects();
     loadDataFromStorage();
-    if (state.bolos.length === 0) {
+    if (!state.bolos || state.bolos.length === 0) {
       loadSampleData(false); // Cargar datos demo en la primera apertura si está vacío
     }
     setupEventListeners();
-    initCloudSync();
     renderAll();
+    try {
+      initCloudSync();
+    } catch (e) {
+      console.warn('Servicio de nube no disponible o bloqueado:', e);
+    }
   }
 
   // === TEMA CLARO / OSCURO ===

@@ -15,7 +15,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="styles.css?v=8.5.0">
+  <link rel="stylesheet" href="styles.css?v=8.6.0">
 </head>
 <body>
   <div class="app-container">
@@ -88,7 +88,53 @@
 
         <!-- Lista de Bolos -->
         <div id="bolos-list" class="items-list">
-          <!-- Bolos insertados dinámicamente -->
+          <div class="item-card" data-bolo-id="sample-1">
+            <div class="item-top-row">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 class="item-title">📍 Villar del Río</h3>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=Villar%20del%20R%C3%ADo%2C%20Espa%C3%B1a" target="_blank" rel="noopener" class="btn-maps-subtle" title="Cómo llegar con Google Maps GPS" onclick="event.stopPropagation();">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-1px; opacity:0.85;"><rect x="4.5" y="4.5" width="15" height="15" rx="3" transform="rotate(45 12 12)"/><path d="M9.5 15v-3.5a1.5 1.5 0 0 1 1.5-1.5h3.5"/><polyline points="12.5 8 15 10 12.5 12"/></svg>
+                  Cómo llegar
+                </a>
+              </div>
+              <button class="status-badge pending" data-action="toggle-status" data-bolo-id="sample-1">⏳ Pendiente</button>
+            </div>
+            <div class="item-meta"><span>📅 Hoy (18:30 - 21:30)</span></div>
+            <div class="item-pills-row">
+              <span class="pill-info pill-charanga">🎶 Charanga La Movida</span>
+              <span class="pill-info">🎉 Pasacalles</span>
+              <span class="pill-info">⏱️ 3h</span>
+              <span class="pill-info pill-car">🚗 90 km (27,00 €)</span>
+            </div>
+            <div class="item-footer">
+              <div class="footer-prices-left"><span class="price-cache-white">120,00 €</span><span class="price-gas-blue">+27,00 €</span></div>
+              <span class="price-total-orange">147,00 €</span>
+            </div>
+          </div>
+
+          <div class="item-card" data-bolo-id="sample-2">
+            <div class="item-top-row">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 class="item-title">📍 Béjar</h3>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=B%C3%A9jar%2C%20Espa%C3%B1a" target="_blank" rel="noopener" class="btn-maps-subtle" title="Cómo llegar con Google Maps GPS" onclick="event.stopPropagation();">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-1px; opacity:0.85;"><rect x="4.5" y="4.5" width="15" height="15" rx="3" transform="rotate(45 12 12)"/><path d="M9.5 15v-3.5a1.5 1.5 0 0 1 1.5-1.5h3.5"/><polyline points="12.5 8 15 10 12.5 12"/></svg>
+                  Cómo llegar
+                </a>
+              </div>
+              <button class="status-badge pending" data-action="toggle-status" data-bolo-id="sample-2">⏳ Pendiente</button>
+            </div>
+            <div class="item-meta"><span>📅 10/08/2026 (17:00 - 20:00)</span></div>
+            <div class="item-pills-row">
+              <span class="pill-info pill-charanga">🎶 Charanga Los Rumberos</span>
+              <span class="pill-info">🎉 Procesión</span>
+              <span class="pill-info">⏱️ 3h</span>
+              <span class="pill-info pill-car">🚗 140 km (42,00 €)</span>
+            </div>
+            <div class="item-footer">
+              <div class="footer-prices-left"><span class="price-cache-white">150,00 €</span><span class="price-gas-blue">+42,00 €</span></div>
+              <span class="price-total-orange">192,00 €</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -445,7 +491,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-  <script src="app.js?v=9.2.0"></script>
+  <script src="app.js?v=9.3.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

@@ -1676,28 +1676,33 @@
         provider.addScope('email');
         provider.addScope('profile');
 
-        // En móviles y PWA se prefiere signInWithRedirect para evitar bloqueo de popups
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (isMobile) {
-          cloudSync.auth.signInWithRedirect(provider);
-        } else {
-          cloudSync.auth.signInWithPopup(provider).then(result => {
-            const user = result.user;
-            cloudSync.user = {
-              uid: user.uid,
-              displayName: user.displayName || 'Músico',
-              email: user.email || '',
-              photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-            };
-            localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
-            updateCloudUI();
-            syncFromCloud();
-            alert(`✅ ¡Cuenta de Google conectada (${user.email})!`);
-          }).catch(err => {
-            console.warn('Popup bloqueado, intentando redirección:', err);
-            cloudSync.auth.signInWithRedirect(provider);
-          });
-        }
+        cloudSync.auth.signInWithPopup(provider).then(result => {
+          const user = result.user;
+          cloudSync.user = {
+            uid: user.uid,
+            displayName: user.displayName || 'Músico',
+            email: user.email || '',
+            photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user=s96-c'
+          };
+          localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
+          updateCloudUI();
+          syncFromCloud();
+          alert(`✅ ¡Cuenta de Google conectada (${user.email})!`);
+        }).catch(err => {
+          console.warn('Error en Google Sign-In Popup:', err);
+          if (err && err.code === 'auth/unauthorized-domain') {
+            alert('⚠️ Para iniciar sesión en Cloudflare, debes agregar "bolotracker.pages.dev" en Firebase Console -> Authentication -> Configuración -> Dominios Autorizados.\n\nPuedes ingresar tu correo de Google a continuación para sincronizar tus bolos.');
+            const modal = document.getElementById('modal-google-login');
+            if (modal) modal.classList.remove('hidden');
+          } else {
+            try {
+              cloudSync.auth.signInWithRedirect(provider);
+            } catch (redirErr) {
+              const modal = document.getElementById('modal-google-login');
+              if (modal) modal.classList.remove('hidden');
+            }
+          }
+        });
       } catch (e) {
         console.error('Error lanzando Google Sign-In:', e);
         const modal = document.getElementById('modal-google-login');

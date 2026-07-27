@@ -1819,16 +1819,35 @@
     const nameEl = document.getElementById('user-display-name');
     const emailEl = document.getElementById('user-email');
 
-    if (cloudSync.user) {
-      if (unauthBox) unauthBox.classList.add('hidden');
-      if (authBox) authBox.classList.remove('hidden');
+    if (!cloudSync.user) {
+      const savedUser = localStorage.getItem('bolotracker_cloud_user');
+      if (savedUser) {
+        try { cloudSync.user = JSON.parse(savedUser); } catch(e) {}
+      }
+    }
+
+    if (cloudSync.user && cloudSync.user.email) {
+      if (unauthBox) {
+        unauthBox.classList.add('hidden');
+        unauthBox.style.display = 'none';
+      }
+      if (authBox) {
+        authBox.classList.remove('hidden');
+        authBox.style.display = 'block';
+      }
 
       if (avatar) avatar.src = cloudSync.user.photoURL || 'https://lh3.googleusercontent.com/a/default-user=s96-c';
       if (nameEl) nameEl.textContent = cloudSync.user.displayName || 'Músico';
       if (emailEl) emailEl.textContent = cloudSync.user.email || '';
     } else {
-      if (unauthBox) unauthBox.classList.remove('hidden');
-      if (authBox) authBox.classList.add('hidden');
+      if (unauthBox) {
+        unauthBox.classList.remove('hidden');
+        unauthBox.style.display = 'block';
+      }
+      if (authBox) {
+        authBox.classList.add('hidden');
+        authBox.style.display = 'none';
+      }
     }
   }
 

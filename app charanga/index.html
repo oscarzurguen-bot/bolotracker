@@ -250,7 +250,7 @@
           <h3>Gestión de Datos</h3>
           <p class="settings-desc">Tus datos se guardan automáticamente en tu dispositivo y en la nube al sincronizar con Google.</p>
           <div class="settings-actions">
-            <button id="btn-clear-all" class="btn btn-danger-outline btn-full">
+            <button id="btn-clear-all" class="btn btn-danger-outline btn-full" onclick="clearAllData()">
               🗑️ Borrar Todos los Datos
             </button>
           </div>
@@ -493,7 +493,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-  <script src="app.js?v=10.7.0"></script>
+  <script src="app.js?v=10.8.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

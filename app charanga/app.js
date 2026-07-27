@@ -123,16 +123,14 @@
       const storedAllInstruments = localStorage.getItem('charanga_allInstruments');
       const storedMyInstruments = localStorage.getItem('charanga_myInstruments');
 
-      if (storedBolos) {
+      if (storedBolos !== null) {
         try {
           const parsed = JSON.parse(storedBolos);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed)) {
             state.bolos = parsed;
           }
         } catch (e) {}
-      }
-
-      if (!state.bolos || !Array.isArray(state.bolos) || state.bolos.length === 0) {
+      } else {
         state.bolos = getSampleBolosData();
       }
       if (storedRate) state.gasRate = parseFloat(storedRate) || 0.30;
@@ -408,11 +406,8 @@
   function renderBolosList() {
     const container = document.getElementById('bolos-list');
     const countBadge = document.getElementById('bolos-count');
-    if (!container) return;
-
-    // Garantizar que state.bolos tenga datos
-    if (!state.bolos || !Array.isArray(state.bolos) || state.bolos.length === 0) {
-      loadSampleData(false);
+    if (!state.bolos || !Array.isArray(state.bolos)) {
+      state.bolos = [];
     }
 
     // Normalizar filtro actual
@@ -1479,12 +1474,17 @@
   }
 
   function clearAllData() {
-    if (confirm('⚠️ ¿ATENCIÓN! ¿Quieres eliminar TODOS los bolos guardados?')) {
+    if (confirm('⚠️ ¿ATENCIÓN! ¿Quieres eliminar TODOS los bolos guardados en este dispositivo y en la nube?')) {
       state.bolos = [];
       saveDataToStorage();
+      if (cloudSync.user) {
+        syncToCloud();
+      }
       renderAll();
+      alert('🗑️ Se han borrado todos los bolos con éxito.');
     }
   }
+  window.clearAllData = clearAllData;
 
   // === HELPERS DE FORMATO Y UTILIDADES ===
   function formatCurrency(val) {

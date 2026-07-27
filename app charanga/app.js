@@ -1314,7 +1314,7 @@
 
     body.innerHTML = `
       <div class="detail-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <h2 style="font-family: var(--font-heading); font-size: 20px;">📍 ${escapeHtml(bolo.name)}</h2>
             <a href="${mapsUrl}" target="_blank" rel="noopener" class="btn-maps-subtle" title="Cómo llegar con Google Maps">
@@ -1322,9 +1322,12 @@
               Cómo llegar
             </a>
           </div>
-          <span class="status-badge ${statusClass}">
-            ${statusText}
-          </span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="status-badge ${statusClass}">
+              ${statusText}
+            </span>
+            <button type="button" id="btn-edit-detail-bolo-top" class="btn btn-primary btn-sm" style="padding: 5px 12px; font-size: 12px; border-radius: var(--radius-sm);">✏️ Editar</button>
+          </div>
         </div>
 
         <div class="detail-row"><span class="detail-icon">🎶</span> <strong>Charanga:</strong> ${escapeHtml(bolo.charanga || 'MenudoChaperon')}</div>
@@ -1340,7 +1343,7 @@
         ` : ''}
 
         ${bolo.notes ? `
-          <div style="background-color: var(--bg-input); padding: 12px; border-radius: var(--radius-md);">
+          <div style="background-color: var(--bg-input); padding: 12px; border-radius: var(--radius-md); margin-top: 8px;">
             <strong style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px;">Notas:</strong>
             <p style="font-size: 14px; white-space: pre-wrap;">${escapeHtml(bolo.notes)}</p>
           </div>
@@ -1348,10 +1351,14 @@
       </div>
     `;
 
-    editBtn.onclick = () => {
+    const openEditForm = () => {
       closeModal('modal-bolo-detail');
       openModalBolo(bolo.id);
     };
+
+    if (editBtn) editBtn.onclick = openEditForm;
+    const topEditBtn = document.getElementById('btn-edit-detail-bolo-top');
+    if (topEditBtn) topEditBtn.onclick = openEditForm;
 
     modal.classList.remove('hidden');
   }
@@ -1640,6 +1647,11 @@
             };
             localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
             syncFromCloud();
+          } else {
+            const savedUser = localStorage.getItem('bolotracker_cloud_user');
+            if (savedUser) {
+              try { cloudSync.user = JSON.parse(savedUser); } catch(e) {}
+            }
           }
           updateCloudUI();
         });

@@ -1685,6 +1685,28 @@
   }
 
   function handleGoogleLogin() {
+    // Inicialización de seguridad si Firebase no estuviera listo aún
+    if (!cloudSync.auth && typeof firebase !== 'undefined') {
+      const firebaseConfig = {
+        apiKey: "AIzaSyDWz9bNPdl9lx2T14f72eZxJ-jfpQxZl6A",
+        authDomain: "bolotracker-65e60.firebaseapp.com",
+        projectId: "bolotracker-65e60",
+        storageBucket: "bolotracker-65e60.firebasestorage.app",
+        messagingSenderId: "416155530447",
+        appId: "1:416155530447:web:220726bc6dfcb18a65b3ba",
+        measurementId: "G-GL3JZH29J2"
+      };
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+        cloudSync.auth = firebase.auth();
+        cloudSync.db = firebase.firestore();
+      } catch (e) {
+        console.warn('Error inicializando Firebase en clic:', e);
+      }
+    }
+
     if (cloudSync.auth) {
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -1693,10 +1715,8 @@
 
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if (isMobile) {
-          // En móviles (Android/iOS) se usa la redirección oficial nativa de Google
           cloudSync.auth.signInWithRedirect(provider);
         } else {
-          // En ordenadores se usa la ventana emergente
           cloudSync.auth.signInWithPopup(provider).then(result => {
             const user = result.user;
             cloudSync.user = {
@@ -1710,8 +1730,11 @@
             syncFromCloud();
             alert(`✅ ¡Cuenta de Google conectada (${user.email})!`);
           }).catch(err => {
-            console.warn('Popup bloqueado, intentando redirección:', err);
-            cloudSync.auth.signInWithRedirect(provider);
+            console.warn('Popup bloqueado por el navegador, activando vincular por correo:', err);
+            if (err && err.code === 'auth/unauthorized-domain') {
+              alert('⚠️ Para habilitar el pop-up de Google en Cloudflare, debes agregar "bolotracker.pages.dev" en Firebase Console -> Authentication -> Configuración -> Dominios Autorizados.');
+            }
+            promptUserEmailFallback();
           });
         }
       } catch (e) {
@@ -1723,8 +1746,11 @@
     }
   }
 
+  // Exponer al scope global de window para garantizar compatibilidad con onclick
+  window.handleGoogleLogin = handleGoogleLogin;
+
   function promptUserEmailFallback() {
-    const email = prompt('Escribe tu correo electrónico de Google para vincular tus bolos en la nube:');
+    const email = prompt('🔑 Escribe tu correo electrónico de Google para vincular tus bolos en la nube:');
     if (email && email.includes('@')) {
       const cleanEmail = email.trim().toLowerCase();
       const namePart = cleanEmail.split('@')[0];
@@ -1741,7 +1767,7 @@
       localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
       updateCloudUI();
       syncToCloud();
-      alert(`✅ ¡Cuenta vinculada (${cleanEmail})!\nTus bolos están sincronizados.`);
+      alert(`✅ ¡Cuenta de Google vinculada con éxito (${cleanEmail})!\nTus bolos están sincronizados en la nube.`);
     }
   }
 

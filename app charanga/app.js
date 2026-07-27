@@ -1678,15 +1678,6 @@
   }
 
   function handleGoogleLogin() {
-    const modal = document.getElementById('modal-google-login');
-    if (modal) {
-      modal.classList.remove('hidden');
-    } else {
-      executeNativeGoogleLogin();
-    }
-  }
-
-  function executeNativeGoogleLogin() {
     if (cloudSync.auth) {
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -1704,23 +1695,16 @@
           localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
           updateCloudUI();
           syncFromCloud();
-          closeModal('modal-google-login');
           alert(`✅ ¡Cuenta de Google conectada (${user.email})!`);
         }).catch(err => {
-          console.warn('Google Popup redirigiendo o bloqueado:', err);
-          if (err && err.code === 'auth/unauthorized-domain') {
-            alert('⚠️ Agrega "bolotracker.pages.dev" en Firebase Console -> Authentication -> Configuración -> Dominios Autorizados.\n\nMientras tanto, puedes conectar tu correo de Google a continuación.');
-          } else {
-            try {
-              cloudSync.auth.signInWithRedirect(provider);
-            } catch (redirErr) {}
-          }
+          console.warn('Popup bloqueado en este dispositivo, intentando redirección oficial:', err);
+          cloudSync.auth.signInWithRedirect(provider);
         });
       } catch (e) {
         console.error('Error lanzando Google Sign-In:', e);
       }
     } else {
-      alert('Por favor escribe tu correo de Google en la casilla de abajo.');
+      alert('Conectando con el servicio de autenticación de Google...');
     }
   }
 

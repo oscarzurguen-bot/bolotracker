@@ -1,6 +1,4 @@
-/* JavaScript - Charanga Manager Application Logic */
-
-document.addEventListener('DOMContentLoaded', () => {
+(() => {
   // === ESTADO GLOBAL ===
   let state = {
     bolos: [],
@@ -23,10 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
     editingBoloMembers: []
   };
 
-  // === INICIALIZACIÓN ===
-  initApp();
+  // === INICIALIZACIÓN DE LA APLICACIÓN ===
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
 
   function initApp() {
+    state.currentFilter = 'all';
     initTheme();
     populateTimeSelects();
     loadDataFromStorage();
@@ -110,7 +113,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const storedAllInstruments = localStorage.getItem('charanga_allInstruments');
       const storedMyInstruments = localStorage.getItem('charanga_myInstruments');
 
-      if (storedBolos) state.bolos = JSON.parse(storedBolos);
+      if (storedBolos) {
+        try {
+          const parsed = JSON.parse(storedBolos);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            state.bolos = parsed;
+          }
+        } catch (e) {}
+      }
       if (storedRate) state.gasRate = parseFloat(storedRate) || 0.30;
       if (storedCharangas) state.myCharangas = JSON.parse(storedCharangas);
       if (storedMembers) state.myMembers = JSON.parse(storedMembers);
@@ -170,10 +180,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // === RENDERIZADO GLOBAL ===
   function renderAll() {
+    if (!state.currentFilter) state.currentFilter = 'all';
     renderCharangasSettings();
-    renderInstrumentsSettings();
     renderCharangaRadios();
-    renderInstrumentRadios();
     renderFilterChips();
     renderKPIs();
     renderBolosList();
@@ -382,37 +391,55 @@ document.addEventListener('DOMContentLoaded', () => {
     if (estimatedEl) estimatedEl.textContent = formatCurrency(estimatedSum);
   }
 
-  // === RENDER LISTA DE BOLOS ===
   function renderBolosList() {
     const container = document.getElementById('bolos-list');
     const countBadge = document.getElementById('bolos-count');
+    if (!container) return;
+
+    // Garantizar que state.bolos tenga datos
+    if (!state.bolos || !Array.isArray(state.bolos) || state.bolos.length === 0) {
+      loadSampleData(false);
+    }
+
+    // Normalizar filtro actual
+    if (!state.currentFilter) {
+      state.currentFilter = 'all';
+    }
 
     // Filtrar bolos de forma limpia y robusta
-    let filtered = state.bolos.filter(b => {
-      const bStatus = b.status || 'pending';
-      if (state.currentFilter === 'upcoming') {
-        return bStatus === 'upcoming';
-      }
-      if (state.currentFilter === 'pending') {
-        return bStatus === 'pending';
-      }
-      if (state.currentFilter === 'paid') {
-        return bStatus === 'paid';
-      }
-      if (state.currentFilter === 'car') {
-        return Boolean(b.hasCar);
-      }
-      if (state.currentFilter === 'all') {
-        return true;
-      }
+    let filtered = [];
+    if (state.currentFilter === 'all') {
+      filtered = [...state.bolos];
+    } else if (state.currentFilter === 'upcoming') {
+      filtered = state.bolos.filter(b => (b.status || 'pending') === 'upcoming');
+    } else if (state.currentFilter === 'pending') {
+      filtered = state.bolos.filter(b => (b.status || 'pending') === 'pending');
+    } else if (state.currentFilter === 'paid') {
+      filtered = state.bolos.filter(b => (b.status || 'pending') === 'paid');
+    } else if (state.currentFilter === 'car') {
+      filtered = state.bolos.filter(b => Boolean(b.hasCar));
+    } else {
       // Filtro por charanga / grupo específico
-      return b.charanga === state.currentFilter;
-    });
+      filtered = state.bolos.filter(b => b.charanga === state.currentFilter);
+    }
 
-    // Ordenar por fecha descendente
-    filtered.sort((a, b) => new Date(b.date + 'T' + (b.time || '00:00')) - new Date(a.date + 'T' + (a.time || '00:00')));
+    // Fallback de seguridad: si tras filtrar da 0 pero estamos en all o filtro invalido
+    if (filtered.length === 0 && state.currentFilter === 'all' && state.bolos.length > 0) {
+      filtered = [...state.bolos];
+    }
 
-    countBadge.textContent = filtered.length.toString();
+    // Ordenar por fecha descendente de forma segura
+    try {
+      filtered.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date + 'T' + (a.time || '00:00')).getTime() : 0;
+        const dateB = b.date ? new Date(b.date + 'T' + (b.time || '00:00')).getTime() : 0;
+        return dateB - dateA;
+      });
+    } catch (e) {
+      console.warn('Error ordenando bolos:', e);
+    }
+
+    if (countBadge) countBadge.textContent = filtered.length.toString();
 
     if (filtered.length === 0) {
       container.innerHTML = `
@@ -1557,12 +1584,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof firebase !== 'undefined') {
       const firebaseConfig = {
-        apiKey: "AIzaSyDemoBoloTrackerApiKey2026",
-        authDomain: "bolotracker-app.firebaseapp.com",
-        projectId: "bolotracker-app",
-        storageBucket: "bolotracker-app.appspot.com",
-        messagingSenderId: "1234567890",
-        appId: "1:1234567890:web:abcdef123456"
+        apiKey: "AIzaSyDWz9bNPdl9lx2T14f72eZxJ-jfpQxZl6A",
+        authDomain: "bolotracker-65e60.firebaseapp.com",
+        projectId: "bolotracker-65e60",
+        storageBucket: "bolotracker-65e60.firebasestorage.app",
+        messagingSenderId: "416155530447",
+        appId: "1:416155530447:web:220726bc6dfcb18a65b3ba",
+        measurementId: "G-GL3JZH29J2"
       };
 
       try {
@@ -1700,27 +1728,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (docSnap.exists) {
         const cloudData = docSnap.data();
-        if (cloudData.bolos && Array.isArray(cloudData.bolos)) {
+        if (cloudData.bolos && Array.isArray(cloudData.bolos) && cloudData.bolos.length > 0) {
           state.bolos = cloudData.bolos;
+        } else if (state.bolos.length > 0) {
+          // Si en la nube no hay bolos pero localmente sí tenemos bolos, subirlos a la nube
+          syncToCloud();
         }
-        if (cloudData.myCharangas && Array.isArray(cloudData.myCharangas)) {
+
+        if (cloudData.myCharangas && Array.isArray(cloudData.myCharangas) && cloudData.myCharangas.length > 0) {
           state.myCharangas = cloudData.myCharangas;
         }
-        if (cloudData.myInstruments && Array.isArray(cloudData.myInstruments)) {
-          state.myInstruments = cloudData.myInstruments;
-        }
-        if (cloudData.allInstruments && Array.isArray(cloudData.allInstruments)) {
-          state.allInstruments = cloudData.allInstruments;
-        }
+
         if (cloudData.gasRate) {
           state.gasRate = cloudData.gasRate;
         }
-        // Guardar localmente la versión descargada de la nube
+
+        // Si por alguna razón state.bolos estuviera vacío, recargar datos iniciales
+        if (!state.bolos || state.bolos.length === 0) {
+          loadSampleData(false);
+        }
+
+        // Guardar localmente la versión sincronizada
         localStorage.setItem('charanga_bolos', JSON.stringify(state.bolos));
         localStorage.setItem('charanga_gasRate', state.gasRate.toString());
         localStorage.setItem('charanga_myCharangas', JSON.stringify(state.myCharangas));
-        localStorage.setItem('charanga_allInstruments', JSON.stringify(state.allInstruments));
-        localStorage.setItem('charanga_myInstruments', JSON.stringify(state.myInstruments));
 
         renderAll();
       } else {
@@ -1728,7 +1759,10 @@ document.addEventListener('DOMContentLoaded', () => {
         syncToCloud();
       }
     } catch (err) {
-      console.error('Error sincronizando desde la nube:', err);
+      console.log('Modo nube local activado:', err.message);
+      if (!state.bolos || state.bolos.length === 0) {
+        loadSampleData(false);
+      }
     }
   }
 
@@ -1757,8 +1791,7 @@ document.addEventListener('DOMContentLoaded', () => {
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
-        "'": '&#039;'
       }[m];
     });
   }
-});
+})();

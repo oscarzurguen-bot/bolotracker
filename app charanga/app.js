@@ -121,6 +121,10 @@
           }
         } catch (e) {}
       }
+
+      if (!state.bolos || !Array.isArray(state.bolos) || state.bolos.length === 0) {
+        state.bolos = getSampleBolosData();
+      }
       if (storedRate) state.gasRate = parseFloat(storedRate) || 0.30;
       if (storedCharangas) state.myCharangas = JSON.parse(storedCharangas);
       if (storedMembers) state.myMembers = JSON.parse(storedMembers);
@@ -1400,14 +1404,9 @@
     reader.readAsText(file);
   }
 
-  function loadSampleData(confirmUser = true) {
-    if (confirmUser && !confirm('¿Cargar datos de ejemplo? Esto añadirá bolos demostrativos.')) {
-      return;
-    }
-
+  function getSampleBolosData() {
     const todayStr = new Date().toISOString().split('T')[0];
-
-    const sampleBolos = [
+    return [
       {
         id: 'sample-1',
         name: 'Villar del Río',
@@ -1419,7 +1418,6 @@
         price: 120,
         status: 'pending',
         charanga: 'Charanga La Movida',
-        instrument: 'Trompeta',
         hasCar: true,
         km: 90,
         members: ['María 🎺', 'Angy 📯', 'Dani 🎷', 'Rubén 🥁'],
@@ -1436,7 +1434,6 @@
         price: 150,
         status: 'pending',
         charanga: 'Charanga Los Rumberos',
-        instrument: 'Caja',
         hasCar: true,
         km: 140,
         members: ['Dani 🎷', 'Lucía 🎷', 'Angel 🥁'],
@@ -1453,15 +1450,20 @@
         price: 100,
         status: 'paid',
         charanga: 'Charanga La Movida',
-        instrument: 'Bombo',
         hasCar: false,
         km: 0,
         members: ['María 🎺', 'Sara 🪘'],
         notes: 'Cobrado en mano tras finalizar.'
       }
     ];
+  }
 
-    state.bolos = sampleBolos;
+  function loadSampleData(confirmUser = true) {
+    if (confirmUser && !confirm('¿Cargar datos de ejemplo? Esto añadirá bolos demostrativos.')) {
+      return;
+    }
+
+    state.bolos = getSampleBolosData();
     saveDataToStorage();
     renderAll();
   }

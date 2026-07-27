@@ -1650,12 +1650,41 @@
   }
 
   function handleGoogleLogin() {
-    // Abrir modal interactivo de Google Login
-    const modal = document.getElementById('modal-google-login');
-    if (modal) {
-      modal.classList.remove('hidden');
+    if (cloudSync.auth) {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.addScope('email');
+        provider.addScope('profile');
+
+        cloudSync.auth.signInWithPopup(provider).then(result => {
+          const user = result.user;
+          cloudSync.user = {
+            uid: user.uid,
+            displayName: user.displayName || 'Músico',
+            email: user.email || '',
+            photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user=s96-c'
+          };
+          localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
+          updateCloudUI();
+          syncFromCloud();
+          alert(`✅ ¡Cuenta de Google conectada con éxito (${user.email})!\nTus bolos se sincronizan automáticamente.`);
+        }).catch(err => {
+          console.warn('Google Popup redirigiendo o bloqueado:', err);
+          if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+            const modal = document.getElementById('modal-google-login');
+            if (modal) modal.classList.remove('hidden');
+          } else {
+            cloudSync.auth.signInWithRedirect(provider);
+          }
+        });
+      } catch (e) {
+        console.error('Error lanzando Google Sign-In:', e);
+        const modal = document.getElementById('modal-google-login');
+        if (modal) modal.classList.remove('hidden');
+      }
     } else {
-      promptGoogleAccountFallback();
+      const modal = document.getElementById('modal-google-login');
+      if (modal) modal.classList.remove('hidden');
     }
   }
 
@@ -1794,4 +1823,12 @@
       }[m];
     });
   }
+
+  // Garantizar renderizado inmediato aunque el DOM tarde en responder
+  setTimeout(() => {
+    const listEl = document.getElementById('bolos-list');
+    if (listEl && listEl.children.length === 0) {
+      renderAll();
+    }
+  }, 50);
 })();

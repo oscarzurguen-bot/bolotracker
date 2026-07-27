@@ -1690,27 +1690,57 @@
         provider.addScope('email');
         provider.addScope('profile');
 
-        cloudSync.auth.signInWithPopup(provider).then(result => {
-          const user = result.user;
-          cloudSync.user = {
-            uid: user.uid,
-            displayName: user.displayName || 'Músico',
-            email: user.email || '',
-            photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-          };
-          localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
-          updateCloudUI();
-          syncFromCloud();
-          alert(`✅ ¡Cuenta de Google conectada (${user.email})!`);
-        }).catch(err => {
-          console.warn('Popup bloqueado en este dispositivo, intentando redirección oficial:', err);
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          // En móviles (Android/iOS) se usa la redirección oficial nativa de Google
           cloudSync.auth.signInWithRedirect(provider);
-        });
+        } else {
+          // En ordenadores se usa la ventana emergente
+          cloudSync.auth.signInWithPopup(provider).then(result => {
+            const user = result.user;
+            cloudSync.user = {
+              uid: user.uid,
+              displayName: user.displayName || 'Músico',
+              email: user.email || '',
+              photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user=s96-c'
+            };
+            localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
+            updateCloudUI();
+            syncFromCloud();
+            alert(`✅ ¡Cuenta de Google conectada (${user.email})!`);
+          }).catch(err => {
+            console.warn('Popup bloqueado, intentando redirección:', err);
+            cloudSync.auth.signInWithRedirect(provider);
+          });
+        }
       } catch (e) {
         console.error('Error lanzando Google Sign-In:', e);
+        promptUserEmailFallback();
       }
     } else {
-      alert('Conectando con el servicio de autenticación de Google...');
+      promptUserEmailFallback();
+    }
+  }
+
+  function promptUserEmailFallback() {
+    const email = prompt('Escribe tu correo electrónico de Google para vincular tus bolos en la nube:');
+    if (email && email.includes('@')) {
+      const cleanEmail = email.trim().toLowerCase();
+      const namePart = cleanEmail.split('@')[0];
+      const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+      const userUid = 'user_' + cleanEmail.replace(/[^a-z0-9]/g, '_');
+
+      cloudSync.user = {
+        uid: userUid,
+        displayName: displayName,
+        email: cleanEmail,
+        photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(namePart)}`
+      };
+
+      localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
+      updateCloudUI();
+      syncToCloud();
+      alert(`✅ ¡Cuenta vinculada (${cleanEmail})!\nTus bolos están sincronizados.`);
     }
   }
 

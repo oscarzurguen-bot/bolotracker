@@ -38,6 +38,12 @@
     }
     setupEventListeners();
     renderAll();
+
+    // Re-renderizado de seguridad para asegurar contador y KPIs sincronizados
+    setTimeout(() => {
+      renderAll();
+    }, 50);
+
     try {
       initCloudSync();
     } catch (e) {
@@ -1770,7 +1776,12 @@
   }
 
   async function syncFromCloud() {
-    if (!cloudSync.user || !cloudSync.db) return;
+    if (!cloudSync.user) return;
+    if (!cloudSync.db && typeof firebase !== 'undefined' && firebase.firestore) {
+      try { cloudSync.db = firebase.firestore(); } catch (e) {}
+    }
+    if (!cloudSync.db) return;
+
     try {
       const docRef = cloudSync.db.collection('users').doc(cloudSync.user.uid);
       const docSnap = await docRef.get();
@@ -1780,7 +1791,6 @@
         if (cloudData.bolos && Array.isArray(cloudData.bolos) && cloudData.bolos.length > 0) {
           state.bolos = cloudData.bolos;
         } else if (state.bolos.length > 0) {
-          // Si en la nube no hay bolos pero localmente sí tenemos bolos, subirlos a la nube
           syncToCloud();
         }
 
@@ -1792,19 +1802,16 @@
           state.gasRate = cloudData.gasRate;
         }
 
-        // Si por alguna razón state.bolos estuviera vacío, recargar datos iniciales
         if (!state.bolos || state.bolos.length === 0) {
           loadSampleData(false);
         }
 
-        // Guardar localmente la versión sincronizada
         localStorage.setItem('charanga_bolos', JSON.stringify(state.bolos));
         localStorage.setItem('charanga_gasRate', state.gasRate.toString());
         localStorage.setItem('charanga_myCharangas', JSON.stringify(state.myCharangas));
 
         renderAll();
       } else {
-        // Primera vez en la nube para este usuario: Migrar bolos locales a la nube automáticamente
         syncToCloud();
       }
     } catch (err) {
@@ -1816,7 +1823,12 @@
   }
 
   async function syncToCloud() {
-    if (!cloudSync.user || !cloudSync.db) return;
+    if (!cloudSync.user) return;
+    if (!cloudSync.db && typeof firebase !== 'undefined' && firebase.firestore) {
+      try { cloudSync.db = firebase.firestore(); } catch (e) {}
+    }
+    if (!cloudSync.db) return;
+
     try {
       const docRef = cloudSync.db.collection('users').doc(cloudSync.user.uid);
       await docRef.set({

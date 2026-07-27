@@ -1651,9 +1651,13 @@
     const logoutBtn = document.getElementById('btn-google-logout');
     const manualSyncBtn = document.getElementById('btn-manual-sync');
     const confirmGoogleLoginBtn = document.getElementById('btn-confirm-google-login');
+    const nativeGooglePopupBtn = document.getElementById('btn-native-google-popup');
 
     if (loginBtn) {
       loginBtn.addEventListener('click', handleGoogleLogin);
+    }
+    if (nativeGooglePopupBtn) {
+      nativeGooglePopupBtn.addEventListener('click', executeNativeGoogleLogin);
     }
     if (confirmGoogleLoginBtn) {
       confirmGoogleLoginBtn.addEventListener('click', executeGoogleLoginFromModal);
@@ -1674,6 +1678,15 @@
   }
 
   function handleGoogleLogin() {
+    const modal = document.getElementById('modal-google-login');
+    if (modal) {
+      modal.classList.remove('hidden');
+    } else {
+      executeNativeGoogleLogin();
+    }
+  }
+
+  function executeNativeGoogleLogin() {
     if (cloudSync.auth) {
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -1691,30 +1704,23 @@
           localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
           updateCloudUI();
           syncFromCloud();
+          closeModal('modal-google-login');
           alert(`✅ ¡Cuenta de Google conectada (${user.email})!`);
         }).catch(err => {
-          console.warn('Error en Google Sign-In Popup:', err);
+          console.warn('Google Popup redirigiendo o bloqueado:', err);
           if (err && err.code === 'auth/unauthorized-domain') {
-            alert('⚠️ Para iniciar sesión en Cloudflare, debes agregar "bolotracker.pages.dev" en Firebase Console -> Authentication -> Configuración -> Dominios Autorizados.\n\nPuedes ingresar tu correo de Google a continuación para sincronizar tus bolos.');
-            const modal = document.getElementById('modal-google-login');
-            if (modal) modal.classList.remove('hidden');
+            alert('⚠️ Agrega "bolotracker.pages.dev" en Firebase Console -> Authentication -> Configuración -> Dominios Autorizados.\n\nMientras tanto, puedes conectar tu correo de Google a continuación.');
           } else {
             try {
               cloudSync.auth.signInWithRedirect(provider);
-            } catch (redirErr) {
-              const modal = document.getElementById('modal-google-login');
-              if (modal) modal.classList.remove('hidden');
-            }
+            } catch (redirErr) {}
           }
         });
       } catch (e) {
         console.error('Error lanzando Google Sign-In:', e);
-        const modal = document.getElementById('modal-google-login');
-        if (modal) modal.classList.remove('hidden');
       }
     } else {
-      const modal = document.getElementById('modal-google-login');
-      if (modal) modal.classList.remove('hidden');
+      alert('Por favor escribe tu correo de Google en la casilla de abajo.');
     }
   }
 

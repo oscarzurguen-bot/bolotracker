@@ -15,7 +15,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="styles.css?v=9.2.0">
+  <link rel="stylesheet" href="styles.css?v=9.3.0">
 </head>
 <body>
   <div class="app-container">
@@ -248,19 +248,9 @@
 
         <div class="settings-card">
           <h3>Gestión de Datos</h3>
-          <p class="settings-desc">Guarda una copia de seguridad de tus bolos y ensayos o restaura tus datos en otro móvil.</p>
+          <p class="settings-desc">Tus datos se guardan automáticamente en tu dispositivo y en la nube al sincronizar con Google.</p>
           <div class="settings-actions">
-            <button id="btn-export-data" class="btn btn-outline">
-              📥 Exportar Copia de Seguridad
-            </button>
-            <label for="input-import-data" class="btn btn-outline">
-              📤 Importar Copia de Seguridad
-              <input type="file" id="input-import-data" accept=".json" style="display:none;">
-            </label>
-            <button id="btn-load-sample" class="btn btn-outline btn-amber">
-              ✨ Cargar Datos de Ejemplo
-            </button>
-            <button id="btn-clear-all" class="btn btn-danger-outline">
+            <button id="btn-clear-all" class="btn btn-danger-outline btn-full">
               🗑️ Borrar Todos los Datos
             </button>
           </div>
@@ -503,7 +493,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-  <script src="app.js?v=9.9.0"></script>
+  <script src="app.js?v=10.0.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

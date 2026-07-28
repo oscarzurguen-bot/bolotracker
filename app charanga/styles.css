@@ -1062,7 +1062,7 @@ body {
   left: 0;
   width: 100%;
   min-width: 175px;
-  background-color: #181A26;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.7);
@@ -1071,6 +1071,12 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+[data-theme="light"] .inst-dropdown-menu {
+  background-color: #FFFFFF;
+  border-color: #CBD5E1;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .inst-opt-item {
@@ -1083,6 +1089,10 @@ body {
   gap: 8px;
   cursor: pointer;
   transition: background-color 0.15s ease;
+}
+
+[data-theme="light"] .inst-opt-item {
+  color: #0F172A;
 }
 
 .inst-opt-item:hover {
@@ -1210,10 +1220,22 @@ body {
 
 .modal-body {
   padding: 20px;
+  padding-bottom: 24px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1;
+}
+
+.modal-footer-actions {
+  padding: 14px 20px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 210;
 }
 
 .form-group {
@@ -1237,14 +1259,29 @@ body {
 .form-input, .form-select, .form-textarea {
   background-color: var(--bg-input);
   border: 1px solid var(--border-color);
-  color: #FFF;
+  color: var(--text-title);
   font-family: var(--font-body);
   font-size: 14px;
   padding: 10px 14px;
   border-radius: var(--radius-md);
   outline: none;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
   width: 100%;
+  color-scheme: dark;
+}
+
+[data-theme="light"] .form-input, 
+[data-theme="light"] .form-select, 
+[data-theme="light"] .form-textarea {
+  color: #0F172A !important;
+  background-color: #F1F5F9;
+  border-color: #CBD5E1;
+  color-scheme: light !important;
+}
+
+.form-select option {
+  background-color: var(--bg-card);
+  color: var(--text-title);
 }
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {

@@ -236,10 +236,10 @@
               </div>
             </div>
             <div class="cloud-actions-row">
-              <button type="button" id="btn-manual-sync" class="btn btn-outline btn-sm">
+              <button type="button" id="btn-manual-sync" class="btn btn-outline btn-sm" onclick="handleManualSync()">
                 🔄 Sincronizar Ahora
               </button>
-              <button type="button" id="btn-google-logout" class="btn btn-danger-outline btn-sm">
+              <button type="button" id="btn-google-logout" class="btn btn-danger-outline btn-sm" onclick="handleGoogleLogout()">
                 Cerrar Sesión
               </button>
             </div>
@@ -493,7 +493,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-  <script src="app.js?v=11.1.0"></script>
+  <script src="app.js?v=11.2.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

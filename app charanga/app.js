@@ -1813,16 +1813,40 @@
     alert(`✅ ¡Cuenta de Google vinculada con éxito (${cleanEmail})!\nTus bolos y cobros están sincronizados en la nube.`);
   }
 
+  async function handleManualSync() {
+    if (!cloudSync.user) {
+      const savedUser = localStorage.getItem('bolotracker_cloud_user');
+      if (savedUser) {
+        try { cloudSync.user = JSON.parse(savedUser); } catch(e) {}
+      }
+    }
+
+    if (cloudSync.user) {
+      alert('🔄 Sincronizando tus bolos y cobros con la nube...');
+      await syncToCloud();
+      await syncFromCloud();
+      alert(`✅ ¡Sincronización completada con éxito!\nCuenta: ${cloudSync.user.email}`);
+    } else {
+      alert('Debes conectar tu cuenta de Google primero.');
+    }
+  }
+
   function handleGoogleLogout() {
     if (confirm('¿Quieres cerrar sesión de tu cuenta de Google? Tus bolos continuarán guardados en este dispositivo.')) {
-      if (cloudSync.auth && cloudSync.auth.currentUser) {
-        cloudSync.auth.signOut();
-      }
+      try {
+        if (cloudSync.auth && cloudSync.auth.currentUser) {
+          cloudSync.auth.signOut();
+        }
+      } catch (e) {}
       cloudSync.user = null;
       localStorage.removeItem('bolotracker_cloud_user');
       updateCloudUI();
+      alert('👋 Has cerrado sesión de Google. La app seguirá guardando tus datos en este dispositivo.');
     }
   }
+
+  window.handleManualSync = handleManualSync;
+  window.handleGoogleLogout = handleGoogleLogout;
 
   function updateCloudUI() {
     const unauthBox = document.getElementById('cloud-status-unauth');

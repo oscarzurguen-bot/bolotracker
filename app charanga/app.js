@@ -2312,22 +2312,41 @@
     }
   }
 
+  function getCloudDocId() {
+    if (!cloudSync.user) return null;
+    if (cloudSync.user.email) {
+      return 'user_' + cloudSync.user.email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    }
+    return cloudSync.user.uid;
+  }
+
   async function syncFromCloud() {
     if (!cloudSync.user) return;
+    const docId = getCloudDocId();
+    if (!docId) return;
+
     if (!cloudSync.db && typeof firebase !== 'undefined' && firebase.firestore) {
       try { cloudSync.db = firebase.firestore(); } catch (e) {}
     }
     if (!cloudSync.db) return;
 
+    if (cloudSync.auth && !cloudSync.auth.currentUser) {
+      try { await cloudSync.auth.signInAnonymously(); } catch (e) {}
+    }
+
     try {
-      const docRef = cloudSync.db.collection('users').doc(cloudSync.user.uid);
+      const docRef = cloudSync.db.collection('users').doc(docId);
       const docSnap = await docRef.get();
 
       if (docSnap.exists) {
         const cloudData = docSnap.data();
         if (cloudData.bolos && Array.isArray(cloudData.bolos) && cloudData.bolos.length > 0) {
-          state.bolos = cloudData.bolos;
-        } else if (state.bolos.length > 0) {
+          const localMap = new Map((state.bolos || []).map(b => [String(b.id), b]));
+          cloudData.bolos.forEach(b => {
+            localMap.set(String(b.id), b);
+          });
+          state.bolos = Array.from(localMap.values());
+        } else if (state.bolos && state.bolos.length > 0) {
           syncToCloud();
         }
 
@@ -2339,10 +2358,6 @@
           state.gasRate = cloudData.gasRate;
         }
 
-        if (!state.bolos || state.bolos.length === 0) {
-          loadSampleData(false);
-        }
-
         localStorage.setItem('charanga_bolos', JSON.stringify(state.bolos));
         localStorage.setItem('charanga_gasRate', state.gasRate.toString());
         localStorage.setItem('charanga_myCharangas', JSON.stringify(state.myCharangas));
@@ -2352,23 +2367,29 @@
         syncToCloud();
       }
     } catch (err) {
-      console.log('Modo nube local activado:', err.message);
-      if (!state.bolos || state.bolos.length === 0) {
-        loadSampleData(false);
-      }
+      console.warn('Modo nube local activado:', err.message);
     }
   }
 
   async function syncToCloud() {
     if (!cloudSync.user) return;
+    const docId = getCloudDocId();
+    if (!docId) return;
+
     if (!cloudSync.db && typeof firebase !== 'undefined' && firebase.firestore) {
       try { cloudSync.db = firebase.firestore(); } catch (e) {}
     }
     if (!cloudSync.db) return;
 
+    if (cloudSync.auth && !cloudSync.auth.currentUser) {
+      try { await cloudSync.auth.signInAnonymously(); } catch (e) {}
+    }
+
     try {
-      const docRef = cloudSync.db.collection('users').doc(cloudSync.user.uid);
+      const docRef = cloudSync.db.collection('users').doc(docId);
       await docRef.set({
+        email: cloudSync.user.email || '',
+        displayName: cloudSync.user.displayName || 'Músico',
         bolos: state.bolos,
         myCharangas: state.myCharangas,
         myInstruments: state.myInstruments,

@@ -15,7 +15,7 @@
       { name: 'Angel (Bombo)', icon: 'Bombo' },
       { name: 'Sara (Bombardino)', icon: 'Bombardino' }
     ],
-    currentFilter: 'all',
+    currentFilter: 'upcoming',
     currentView: 'list', // 'list' | 'calendar'
     calendarDate: new Date(),
     editingBoloMembers: []
@@ -29,7 +29,8 @@
   }
 
   function initApp() {
-    state.currentFilter = 'all';
+    exportGlobalHandlers();
+    state.currentFilter = 'upcoming';
     initTheme();
     populateTimeSelects();
     loadDataFromStorage();
@@ -192,12 +193,13 @@
 
   // === RENDERIZADO GLOBAL ===
   function renderAll() {
-    if (!state.currentFilter) state.currentFilter = 'all';
+    if (!state.currentFilter) state.currentFilter = 'upcoming';
     renderCharangasSettings();
     renderCharangaRadios();
     renderFilterChips();
     renderKPIs();
     renderBolosList();
+    renderCalendar();
     renderFinances();
   }
 
@@ -350,7 +352,6 @@
     if (!container) return;
 
     let html = `
-      <button class="chip-filter ${state.currentFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
       <button class="chip-filter ${state.currentFilter === 'upcoming' ? 'active' : ''}" data-filter="upcoming">📅 Próximos</button>
       <button class="chip-filter ${state.currentFilter === 'pending' ? 'active' : ''}" data-filter="pending">⏳ Pendientes</button>
       <button class="chip-filter ${state.currentFilter === 'paid' ? 'active' : ''}" data-filter="paid">✅ Cobrados</button>
@@ -411,15 +412,13 @@
     }
 
     // Normalizar filtro actual
-    if (!state.currentFilter) {
-      state.currentFilter = 'all';
+    if (!state.currentFilter || state.currentFilter === 'all') {
+      state.currentFilter = 'upcoming';
     }
 
     // Filtrar bolos de forma limpia y robusta
     let filtered = [];
-    if (state.currentFilter === 'all') {
-      filtered = [...state.bolos];
-    } else if (state.currentFilter === 'upcoming') {
+    if (state.currentFilter === 'upcoming') {
       filtered = state.bolos.filter(b => (b.status || 'pending') === 'upcoming');
     } else if (state.currentFilter === 'pending') {
       filtered = state.bolos.filter(b => (b.status || 'pending') === 'pending');
@@ -432,17 +431,14 @@
       filtered = state.bolos.filter(b => b.charanga === state.currentFilter);
     }
 
-    // Fallback de seguridad: si tras filtrar da 0 pero estamos en all o filtro invalido
-    if (filtered.length === 0 && state.currentFilter === 'all' && state.bolos.length > 0) {
-      filtered = [...state.bolos];
-    }
-
-    // Ordenar por fecha descendente de forma segura
+    // Ordenar de más reciente (más cercano en el tiempo) a más lejano en el tiempo
     try {
       filtered.sort((a, b) => {
-        const dateA = a.date ? new Date(a.date + 'T' + (a.time || '00:00')).getTime() : 0;
-        const dateB = b.date ? new Date(b.date + 'T' + (b.time || '00:00')).getTime() : 0;
-        return dateB - dateA;
+        const timeA = a.startTime || a.time || '00:00';
+        const timeB = b.startTime || b.time || '00:00';
+        const dateA = a.date ? new Date(a.date + 'T' + timeA).getTime() : 0;
+        const dateB = b.date ? new Date(b.date + 'T' + timeB).getTime() : 0;
+        return dateA - dateB;
       });
     } catch (e) {
       console.warn('Error ordenando bolos:', e);
@@ -483,7 +479,7 @@
       const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(bolo.name + ', España')}`;
 
       return `
-        <div class="item-card" data-bolo-id="${bolo.id}">
+        <div class="item-card" data-bolo-id="${bolo.id}" onclick="openBoloDetail('${bolo.id}')">
           <div class="item-top-row">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <h3 class="item-title">📍 ${escapeHtml(bolo.name)}</h3>
@@ -492,9 +488,22 @@
                 Cómo llegar
               </a>
             </div>
-            <button class="status-badge ${statusClass}" data-action="toggle-status" data-bolo-id="${bolo.id}">
-              ${statusText}
-            </button>
+            <div class="status-dropdown-wrapper" onclick="event.stopPropagation();">
+              <button type="button" class="status-badge ${statusClass}" onclick="event.stopPropagation(); handleOpenStatusMenu(event, '${bolo.id}')">
+                ${statusText} ▾
+              </button>
+              <div id="status-menu-${bolo.id}" class="status-dropdown-menu hidden" onclick="event.stopPropagation();">
+                <button type="button" class="status-opt-item ${bolo.status === 'upcoming' ? 'active' : ''}" onclick="event.stopPropagation(); handleSetStatus(event, '${bolo.id}', 'upcoming')">
+                  📅 Próximo
+                </button>
+                <button type="button" class="status-opt-item ${bolo.status === 'pending' ? 'active' : ''}" onclick="event.stopPropagation(); handleSetStatus(event, '${bolo.id}', 'pending')">
+                  ⏳ Pendiente
+                </button>
+                <button type="button" class="status-opt-item ${bolo.status === 'paid' ? 'active' : ''}" onclick="event.stopPropagation(); handleSetStatus(event, '${bolo.id}', 'paid')">
+                  ✅ Cobrado
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="item-meta">
@@ -505,16 +514,16 @@
             <span class="pill-info pill-charanga">🎶 ${escapeHtml(charangaName)}</span>
             ${bolo.type ? `<span class="pill-info">🎉 ${escapeHtml(bolo.type)}</span>` : ''}
             ${bolo.hours ? `<span class="pill-info">⏱️ ${bolo.hours}h</span>` : ''}
-            ${bolo.hasCar ? `<span class="pill-info pill-car">🚗 ${bolo.km} km (${formatCurrency(gasMoney)})</span>` : ''}
+            ${bolo.hasCar ? `<span class="pill-info pill-car">🚗 ${bolo.km} km</span>` : ''}
             ${bolo.members && bolo.members.length > 0 ? `<span class="pill-info">👥 ${bolo.members.length} componentes</span>` : ''}
           </div>
 
           <div class="item-footer">
             <div class="footer-prices-left">
-              <span class="price-cache-white">${formatCurrency(cachePrice)}</span>
+              <span class="price-cache-muted">Caché: ${formatCurrency(cachePrice)}</span>
               ${gasMoney > 0 ? `<span class="price-gas-blue">+${formatCurrency(gasMoney)}</span>` : ''}
             </div>
-            <span class="price-total-orange">${formatCurrency(totalPrice)}</span>
+            <span class="price-total-highlight ${statusClass}">${formatCurrency(totalPrice)}</span>
           </div>
         </div>
       `;
@@ -523,8 +532,75 @@
 
 
 
-  // === RENDER FINANZAS Y PASAPORTE DE PUEBLOS ===
+  function handleFinancesFilterChange() {
+    const yearEl = document.getElementById('fin-filter-year');
+    const monthEl = document.getElementById('fin-filter-month');
+    if (yearEl) state.financesFilterYear = yearEl.value;
+    if (monthEl) state.financesFilterMonth = monthEl.value;
+    renderFinances();
+  }
+
+  window.handleFinancesFilterChange = handleFinancesFilterChange;
+
+  // === RENDER FINANZAS Y ESTADÍSTICAS CON FILTROS ===
   function renderFinances() {
+    if (!state.financesFilterYear) state.financesFilterYear = 'all';
+    if (!state.financesFilterMonth) state.financesFilterMonth = 'all';
+
+    // Rellenar select de años dinámicamente según las fechas de los bolos registrados
+    const yearSelect = document.getElementById('fin-filter-year');
+    if (yearSelect) {
+      const yearsSet = new Set();
+      state.bolos.forEach(b => {
+        if (b.date) {
+          const y = b.date.split('-')[0];
+          if (y && y.length === 4) yearsSet.add(y);
+        }
+      });
+      const yearsArr = Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
+      const currentYearStr = new Date().getFullYear().toString();
+      if (yearsArr.length === 0 || !yearsArr.includes(currentYearStr)) {
+        yearsArr.unshift(currentYearStr);
+      }
+
+      const selectedY = state.financesFilterYear;
+      yearSelect.innerHTML = `<option value="all" ${selectedY === 'all' ? 'selected' : ''}>Todos los años</option>` +
+        yearsArr.map(y => `<option value="${y}" ${selectedY === y ? 'selected' : ''}>${y}</option>`).join('');
+    }
+
+    const monthSelect = document.getElementById('fin-filter-month');
+    if (monthSelect) {
+      monthSelect.value = state.financesFilterMonth;
+    }
+
+    // Actualizar badge resumen visual de los filtros aplicados
+    const summaryEl = document.getElementById('fin-filter-summary');
+    if (summaryEl) {
+      const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      const mText = state.financesFilterMonth !== 'all' ? monthNames[parseInt(state.financesFilterMonth, 10)] : 'Todos los meses';
+      const yText = state.financesFilterYear !== 'all' ? state.financesFilterYear : 'Todos los años';
+      
+      summaryEl.textContent = `📊 Mostrando: ${mText} ${yText}`;
+    }
+
+    // Filtrar bolos para las estadísticas según los selectores de año y mes
+    const filteredBolos = state.bolos.filter(b => {
+      if (!b.date) return false;
+      const parts = b.date.split('-');
+      if (parts.length < 3) return false;
+
+      const y = parts[0];
+      const m = parseInt(parts[1], 10);
+
+      if (state.financesFilterYear !== 'all' && y !== state.financesFilterYear) {
+        return false;
+      }
+      if (state.financesFilterMonth !== 'all' && m !== parseInt(state.financesFilterMonth, 10)) {
+        return false;
+      }
+      return true;
+    });
+
     let paidTotal = 0;
     let pendingTotal = 0;
     let totalKm = 0;
@@ -532,7 +608,7 @@
     let charangaCounts = {};
     let townMap = {};
 
-    state.bolos.forEach(b => {
+    filteredBolos.forEach(b => {
       const price = parseFloat(b.price) || 0;
       const gasMoney = (b.hasCar && b.km) ? (parseFloat(b.km) * state.gasRate) : 0;
 
@@ -573,7 +649,8 @@
     });
 
     state.townMap = townMap;
-    const gasTotal = totalKm * state.gasRate;
+    const townsList = Object.values(townMap);
+    const uniqueTownsCount = townsList.length;
     const grandTotal = paidTotal + pendingTotal; // Solo cachés sin gasolina
 
     const paidEl = document.getElementById('fin-paid-total');
@@ -582,14 +659,10 @@
     if (pendingEl) pendingEl.textContent = formatCurrency(pendingTotal);
     const kmEl = document.getElementById('fin-total-km');
     if (kmEl) kmEl.textContent = `${totalKm.toLocaleString('es-ES')} km`;
-    const gasEl = document.getElementById('fin-gas-total');
-    if (gasEl) gasEl.textContent = formatCurrency(gasTotal);
-    const gasRateLabel = document.getElementById('fin-gas-rate-label');
-    if (gasRateLabel) gasRateLabel.textContent = state.gasRate.toFixed(2).replace('.', ',');
+    const finTownsEl = document.getElementById('fin-towns-count');
+    if (finTownsEl) finTownsEl.textContent = `${uniqueTownsCount} ${uniqueTownsCount === 1 ? 'pueblo' : 'pueblos'}`;
     const grandEl = document.getElementById('fin-grand-total');
     if (grandEl) grandEl.textContent = formatCurrency(grandTotal);
-
-    const townsList = Object.values(townMap);
 
     // RENDERIZAR PASAPORTE DE GIRA (SELLOS DE PUEBLOS)
     const townsCountBadge = document.getElementById('towns-count');
@@ -600,7 +673,7 @@
       if (townsList.length === 0) {
         passportGrid.innerHTML = `
           <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 20px;">
-            📍 Todavía no has registrado ningún pueblo en tus bolos.
+            📍 Todavía no has registrado ningún pueblo.
           </div>
         `;
       } else {
@@ -611,7 +684,7 @@
           const grandTotalTown = t.totalEarned; // Omite gasolina
 
           return `
-            <div class="passport-stamp-card ${isVip ? 'vip-town' : ''}" data-town="${escapeHtml(t.name)}">
+            <div class="passport-stamp-card ${isVip ? 'vip-town' : ''}" data-town="${escapeHtml(t.name)}" onclick="openTownDetailModal('${escapeHtml(t.name)}')" style="cursor: pointer;">
               ${isVip ? `<span class="stamp-badge-vip">⭐ ${t.count} Bolos</span>` : ''}
               <div class="stamp-town-name">📍 ${escapeHtml(t.name)}</div>
               <div class="stamp-info-row">
@@ -627,17 +700,74 @@
       }
     }
 
-    // Desglose por Charanga
+    // Desglose por Charanga / Grupo (Panel individual por grupo)
     const charContainer = document.getElementById('charanga-stats');
     if (charContainer) {
-      charContainer.innerHTML = Object.keys(charangaCounts).map(ch => `
-        <div class="inst-stat-item">
-          <span style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
-            🎶 ${escapeHtml(ch)}
-          </span>
-          <strong style="color: #C084FC;">${charangaCounts[ch]} bolos</strong>
-        </div>
-      `).join('');
+      const allCharangas = Array.from(new Set([
+        ...state.myCharangas,
+        ...filteredBolos.map(b => b.charanga || 'MenudoChaperon')
+      ])).filter(Boolean);
+
+      if (allCharangas.length === 0) {
+        charContainer.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 16px; font-size: 13px;">
+            🎶 No hay bolos registrados para el periodo seleccionado.
+          </div>
+        `;
+      } else {
+        charContainer.innerHTML = allCharangas.map(chName => {
+          const charBolos = filteredBolos.filter(b => (b.charanga || 'MenudoChaperon') === chName);
+          const totalCount = charBolos.length;
+          
+          let paidCount = 0;
+          let paidMoney = 0;
+          let pendingCount = 0;
+          let pendingMoney = 0;
+
+          charBolos.forEach(b => {
+            const cachePrice = parseFloat(b.price) || 0;
+            const gasMoney = (b.hasCar && b.km) ? (parseFloat(b.km) * state.gasRate) : 0;
+            const total = cachePrice + gasMoney;
+
+            if (b.status === 'paid') {
+              paidCount++;
+              paidMoney += total;
+            } else {
+              pendingCount++;
+              pendingMoney += total;
+            }
+          });
+
+          return `
+            <div class="charanga-panel-card">
+              <div class="charanga-panel-header">
+                <div class="charanga-panel-title">
+                  <span>🎶</span> <span>${escapeHtml(chName)}</span>
+                </div>
+                <span class="charanga-badge-count">${totalCount} ${totalCount === 1 ? 'bolo' : 'bolos'}</span>
+              </div>
+              
+              <div class="charanga-panel-body">
+                <div class="charanga-metric-box paid">
+                  <div class="metric-head">
+                    <span>✅ Cobrados</span>
+                    <span class="metric-num">${paidCount}</span>
+                  </div>
+                  <div class="metric-amount">${formatCurrency(paidMoney)}</div>
+                </div>
+
+                <div class="charanga-metric-box pending">
+                  <div class="metric-head">
+                    <span>⏳ Pendientes</span>
+                    <span class="metric-num">${pendingCount}</span>
+                  </div>
+                  <div class="metric-amount">${formatCurrency(pendingMoney)}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
     }
 
     // Desglose instrumentos
@@ -659,7 +789,28 @@
     const modal = document.getElementById('modal-town-detail');
     const titleEl = document.getElementById('modal-town-title');
     const bodyEl = document.getElementById('modal-town-body');
-    if (!modal || !titleEl || !bodyEl || !townData) return;
+    if (!modal || !titleEl || !bodyEl || !townName) return;
+
+    if (!townData || !townData.bolos) {
+      if (state.townMap && state.townMap[townName]) {
+        townData = state.townMap[townName];
+      } else {
+        const cleanTarget = townName.trim().toLowerCase();
+        const townBolos = state.bolos.filter(b => b.name && b.name.trim().toLowerCase() === cleanTarget);
+        if (townBolos.length > 0) {
+          townData = {
+            name: townName,
+            count: townBolos.length,
+            bolos: townBolos,
+            lastDate: townBolos.reduce((max, b) => (b.date > max ? b.date : max), townBolos[0].date),
+            totalEarned: townBolos.reduce((sum, b) => sum + (parseFloat(b.price) || 0), 0),
+            totalKm: townBolos.reduce((sum, b) => sum + (b.hasCar && b.km ? parseFloat(b.km) : 0), 0)
+          };
+        }
+      }
+    }
+
+    if (!townData || !townData.bolos) return;
 
     titleEl.textContent = `📍 Ficha del Pueblo: ${townName}`;
 
@@ -687,7 +838,7 @@
         </div>
       </div>
 
-      <h4 style="font-family: var(--font-heading); font-size: 14px; color: #FFF; margin-bottom: 8px;">📅 Historial de Bolos en este pueblo:</h4>
+      <h4 style="font-family: var(--font-heading); font-size: 14px; color: var(--text-title); margin-bottom: 8px;">📅 Historial de Bolos en este pueblo:</h4>
       <div class="items-list">
     `;
 
@@ -699,7 +850,7 @@
       const timeStr = b.startTime ? `${b.startTime}${b.endTime ? ' - ' + b.endTime : ''}` : (b.time ? b.time + 'h' : '');
 
       return `
-        <div class="item-card">
+        <div class="item-card" data-bolo-id="${b.id}" onclick="openBoloDetail('${b.id}')" style="cursor: pointer;">
           <div class="item-top-row">
             <h3 class="item-title">🎉 ${escapeHtml(b.type || b.name)}</h3>
             <span class="status-badge ${isPaid ? 'paid' : 'pending'}">
@@ -713,16 +864,15 @@
 
           <div class="item-pills-row">
             <span class="pill-info pill-charanga">🎶 ${escapeHtml(b.charanga || 'Charanga')}</span>
-            <span class="pill-info pill-instrument">${getInstrumentIcon(b.instrument)} ${escapeHtml(b.instrument || 'Caja')}</span>
-            ${b.hasCar ? `<span class="pill-info pill-car">🚗 ${b.km} km (+${formatCurrency(gasMoney)})</span>` : ''}
+            ${b.hasCar ? `<span class="pill-info pill-car">🚗 ${b.km} km</span>` : ''}
           </div>
 
           <div class="item-footer">
             <div class="footer-prices-left">
-              <span class="price-cache-white">${formatCurrency(cachePrice)}</span>
+              <span class="price-cache-muted">Caché: ${formatCurrency(cachePrice)}</span>
               ${gasMoney > 0 ? `<span class="price-gas-blue">+${formatCurrency(gasMoney)}</span>` : ''}
             </div>
-            <span class="price-total-orange">${formatCurrency(totalBolo)}</span>
+            <span class="price-total-highlight ${b.status}">${formatCurrency(totalBolo)}</span>
           </div>
         </div>
       `;
@@ -732,7 +882,158 @@
     bodyEl.innerHTML = html;
 
     modal.classList.remove('hidden');
+    modal.style.display = 'flex';
   }
+
+  // === RENDERIZADO Y LÓGICA DEL CALENDARIO ENTERO DE BOLOS ===
+  let calendarCurrentDate = new Date();
+
+  function renderCalendar() {
+    const titleEl = document.getElementById('calendar-month-title');
+    const gridEl = document.getElementById('calendar-days-grid');
+    if (!titleEl || !gridEl) return;
+
+    const year = calendarCurrentDate.getFullYear();
+    const month = calendarCurrentDate.getMonth();
+
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    titleEl.textContent = `${monthNames[month]} ${year}`;
+
+    // Agrupar bolos por fecha YYYY-MM-DD
+    const bolosByDate = {};
+    state.bolos.forEach(b => {
+      if (b.date) {
+        if (!bolosByDate[b.date]) bolosByDate[b.date] = [];
+        bolosByDate[b.date].push(b);
+      }
+    });
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // Cálculo del primer día del mes (Lunes = 0, ..., Domingo = 6)
+    const firstDayObj = new Date(year, month, 1);
+    let startDayOffset = (firstDayObj.getDay() + 6) % 7;
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    let html = '';
+
+    // 1. Celdas del mes anterior (interactivas para crear bolos)
+    const prevMonthYear = month === 0 ? year - 1 : year;
+    const prevMonthIndex = month === 0 ? 11 : month - 1;
+
+    for (let i = startDayOffset - 1; i >= 0; i--) {
+      const dayNum = daysInPrevMonth - i;
+      const prevDateStr = `${prevMonthYear}-${String(prevMonthIndex + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+      const dayBolos = bolosByDate[prevDateStr] || [];
+
+      html += `
+        <div class="cal-day-cell other-month" data-date="${prevDateStr}" onclick="handleCalendarDayClick(event, '${prevDateStr}')" title="Añadir bolo el ${dayNum}/${prevMonthIndex + 1}/${prevMonthYear}">
+          <div class="cal-day-number">${dayNum}</div>
+          <div class="cal-day-events">
+            ${dayBolos.map(b => renderCalEventTag(b)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. Celdas del mes actual (todas visibles y listas para añadir bolo)
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isToday = dateStr === todayStr;
+      const dayBolos = bolosByDate[dateStr] || [];
+
+      dayBolos.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+      html += `
+        <div class="cal-day-cell ${isToday ? 'is-today' : ''}" data-date="${dateStr}" onclick="handleCalendarDayClick(event, '${dateStr}')" title="Clic para añadir bolo el ${d}/${month + 1}/${year}">
+          <div class="cal-day-number">${d}</div>
+          <div class="cal-day-events">
+            ${dayBolos.map(b => renderCalEventTag(b)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. Celdas del mes siguiente para completar la cuadrícula de 7 columnas
+    const totalRendered = startDayOffset + daysInMonth;
+    let nextMonthCellsNeeded = (7 - (totalRendered % 7)) % 7;
+    if (totalRendered + nextMonthCellsNeeded < 35) {
+      nextMonthCellsNeeded += 7;
+    }
+
+    const nextMonthYear = month === 11 ? year + 1 : year;
+    const nextMonthIndex = month === 11 ? 0 : month + 1;
+
+    for (let nd = 1; nd <= nextMonthCellsNeeded; nd++) {
+      const nextDateStr = `${nextMonthYear}-${String(nextMonthIndex + 1).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+      const dayBolos = bolosByDate[nextDateStr] || [];
+
+      html += `
+        <div class="cal-day-cell other-month" data-date="${nextDateStr}" onclick="handleCalendarDayClick(event, '${nextDateStr}')" title="Añadir bolo el ${nd}/${nextMonthIndex + 1}/${nextMonthYear}">
+          <div class="cal-day-number">${nd}</div>
+          <div class="cal-day-events">
+            ${dayBolos.map(b => renderCalEventTag(b)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    gridEl.innerHTML = html;
+  }
+
+  function renderCalEventTag(b) {
+    let tagClass = 'pending';
+    if (b.status === 'upcoming') tagClass = 'upcoming';
+    else if (b.status === 'paid') tagClass = 'paid';
+
+    // Mostrar unicamente la hora de inicio del bolo
+    const timeStr = b.startTime || (b.hours ? `${b.hours}h` : 'Bolo');
+    const fullInfo = `${b.type || b.name || 'Bolo'} (${b.charanga || 'Charanga'}) - ${b.startTime || ''}`;
+
+    return `
+      <div class="cal-event-tag ${tagClass}" data-bolo-id="${b.id}" onclick="handleCalendarEventClick(event, '${b.id}')" title="${escapeHtml(fullInfo)}">
+        ${escapeHtml(timeStr)}
+      </div>
+    `;
+  }
+
+  function handleCalendarDayClick(e, dateStr) {
+    if (e) {
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }
+    openModalBolo(null, dateStr);
+  }
+
+  function handleCalendarEventClick(e, boloId) {
+    if (e) {
+      e.stopPropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }
+    openBoloDetail(boloId);
+  }
+
+  function handleCalendarNav(action) {
+    if (action === 'prev') {
+      calendarCurrentDate = new Date(calendarCurrentDate.getFullYear(), calendarCurrentDate.getMonth() - 1, 1);
+    } else if (action === 'next') {
+      calendarCurrentDate = new Date(calendarCurrentDate.getFullYear(), calendarCurrentDate.getMonth() + 1, 1);
+    } else if (action === 'today') {
+      calendarCurrentDate = new Date();
+    }
+    renderCalendar();
+  }
+
+  window.handleCalendarDayClick = handleCalendarDayClick;
+  window.handleCalendarEventClick = handleCalendarEventClick;
+  window.handleCalendarNav = handleCalendarNav;
 
   // === GESTIÓN DE EVENTOS ===
   function setupEventListeners() {
@@ -766,6 +1067,8 @@
           } else if (targetId === 'view-bolos') {
             renderKPIs();
             renderBolosList();
+          } else if (targetId === 'view-calendario') {
+            renderCalendar();
           }
         }
         return;
@@ -797,22 +1100,23 @@
       });
     });
 
-    // DELEGACIÓN CLICS EN LISTA BOLOS (TOGGLE STATUS / VER DETALLE)
-    document.getElementById('bolos-list').addEventListener('click', (e) => {
-      const toggleBtn = e.target.closest('[data-action="toggle-status"]');
-      if (toggleBtn) {
-        e.stopPropagation();
-        const id = toggleBtn.getAttribute('data-bolo-id');
-        toggleBoloStatus(id);
-        return;
-      }
+    // DELEGACIÓN CLICS EN LISTA BOLOS (VER DETALLE BOLO)
+    const bolosContainer = document.getElementById('bolos-list');
+    if (bolosContainer) {
+      bolosContainer.addEventListener('click', (e) => {
+        if (e.target.closest('.status-dropdown-wrapper') || e.target.closest('.btn-maps-subtle') || e.target.closest('.status-dropdown-menu')) {
+          return;
+        }
 
-      const card = e.target.closest('.item-card');
-      if (card) {
-        const id = card.getAttribute('data-bolo-id');
-        openBoloDetail(id);
-      }
-    });
+        const card = e.target.closest('.item-card');
+        if (card) {
+          const id = card.getAttribute('data-bolo-id');
+          if (id) {
+            openBoloDetail(id);
+          }
+        }
+      });
+    }
 
     // SWITCH CAR Y CÁLCULO EN TIEMPO REAL
     const carSwitch = document.getElementById('bolo-has-car');
@@ -898,8 +1202,12 @@
       });
     }
 
-    // CERRAR MODALES (DELEGACIÓN GLOBAL + CLIC FUERA Y TECLA ESCAPE)
+    // CERRAR MODALES Y DESPLEGABLES (DELEGACIÓN GLOBAL + CLIC FUERA Y TECLA ESCAPE)
     document.addEventListener('click', (e) => {
+      if (!e.target.closest('.status-dropdown-wrapper')) {
+        document.querySelectorAll('.status-dropdown-menu').forEach(m => m.classList.add('hidden'));
+      }
+
       const closeBtn = e.target.closest('[data-close]') || e.target.closest('.btn-close-modal');
       if (closeBtn) {
         e.preventDefault();
@@ -955,23 +1263,87 @@
     document.getElementById('input-import-data').addEventListener('change', importBackup);
     document.getElementById('btn-load-sample').addEventListener('click', () => loadSampleData(true));
     document.getElementById('btn-clear-all').addEventListener('click', clearAllData);
+
+    // NAVEGACIÓN DE MESES EN CALENDARIO
+    const btnCalPrev = document.getElementById('btn-cal-prev');
+    if (btnCalPrev) {
+      btnCalPrev.addEventListener('click', (e) => {
+        if (e) e.stopPropagation();
+        calendarCurrentDate = new Date(calendarCurrentDate.getFullYear(), calendarCurrentDate.getMonth() - 1, 1);
+        renderCalendar();
+      });
+    }
+
+    const btnCalToday = document.getElementById('btn-cal-today');
+    if (btnCalToday) {
+      btnCalToday.addEventListener('click', (e) => {
+        if (e) e.stopPropagation();
+        calendarCurrentDate = new Date();
+        renderCalendar();
+      });
+    }
+
+    const btnCalNext = document.getElementById('btn-cal-next');
+    if (btnCalNext) {
+      btnCalNext.addEventListener('click', (e) => {
+        if (e) e.stopPropagation();
+        calendarCurrentDate = new Date(calendarCurrentDate.getFullYear(), calendarCurrentDate.getMonth() + 1, 1);
+        renderCalendar();
+      });
+    }
+
+    // FILTROS DE ESTADÍSTICAS (AÑO Y MES)
+    const finYearSelect = document.getElementById('fin-filter-year');
+    if (finYearSelect) {
+      finYearSelect.addEventListener('change', (e) => {
+        state.financesFilterYear = e.target.value;
+        renderFinances();
+      });
+    }
+
+    const finMonthSelect = document.getElementById('fin-filter-month');
+    if (finMonthSelect) {
+      finMonthSelect.addEventListener('change', (e) => {
+        state.financesFilterMonth = e.target.value;
+        renderFinances();
+      });
+    }
   }
 
-  // === MANEJO DE COBRAS RÁPIDAS Y ESTADOS ===
-  function toggleBoloStatus(id) {
+  // === MANEJO DE ESTADOS CON MENÚ DESPLEGABLE DE 2 CLICS ===
+  function handleOpenStatusMenu(e, id) {
+    if (e) {
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }
+    const menu = document.getElementById(`status-menu-${id}`);
+    const isClosed = menu ? menu.classList.contains('hidden') : true;
+
+    document.querySelectorAll('.status-dropdown-menu').forEach(m => m.classList.add('hidden'));
+
+    if (menu && isClosed) {
+      menu.classList.remove('hidden');
+    }
+  }
+
+  function handleSetStatus(e, id, newStatus) {
+    if (e) {
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }
     const bolo = state.bolos.find(b => b.id === id);
-    if (bolo) {
-      if (bolo.status === 'upcoming') {
-        bolo.status = 'pending';
-      } else if (bolo.status === 'pending') {
-        bolo.status = 'paid';
-      } else {
-        bolo.status = 'upcoming';
-      }
+    if (bolo && newStatus) {
+      bolo.status = newStatus;
       saveDataToStorage();
+      if (cloudSync.user) {
+        syncToCloud();
+      }
       renderAll();
     }
   }
+
+  window.handleOpenStatusMenu = handleOpenStatusMenu;
+  window.handleSetStatus = handleSetStatus;
 
   // === CÁLCULO DE GASOLINA EN MODAL ===
   function updateGasCalc() {
@@ -1117,7 +1489,7 @@
     state.editingBoloMembers = [];
 
     if (boloId) {
-      const bolo = state.bolos.find(b => b.id === boloId);
+      const bolo = state.bolos.find(b => String(b.id) === String(boloId));
       if (!bolo) return;
 
       titleEl.textContent = 'Editar Bolo';
@@ -1290,12 +1662,20 @@
 
   // === DETALLE COMPLETO BOLO ===
   function openBoloDetail(id) {
-    const bolo = state.bolos.find(b => b.id === id);
+    if (!id) return;
+    let bolo = state.bolos.find(b => String(b.id) === String(id));
+    if (!bolo) {
+      bolo = state.bolos.find(b => b.name && String(id).includes(b.name));
+    }
+    if (!bolo && state.bolos.length > 0) {
+      bolo = state.bolos[0];
+    }
     if (!bolo) return;
 
     const modal = document.getElementById('modal-bolo-detail');
     const body = document.getElementById('detail-body');
     const editBtn = document.getElementById('btn-edit-detail-bolo');
+    if (!modal || !body) return;
 
     const gasMoney = bolo.hasCar && bolo.km ? (parseFloat(bolo.km) * state.gasRate) : 0;
     const timeInfo = bolo.startTime ? `${bolo.startTime}${bolo.endTime ? ' a ' + bolo.endTime : ''} ${bolo.hours ? '(' + bolo.hours + 'h)' : ''}` : (bolo.time ? bolo.time + 'h' : '');
@@ -1322,12 +1702,9 @@
               Cómo llegar
             </a>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="status-badge ${statusClass}">
-              ${statusText}
-            </span>
-            <button type="button" id="btn-edit-detail-bolo-top" class="btn btn-primary btn-sm" style="padding: 5px 12px; font-size: 12px; border-radius: var(--radius-sm);">✏️ Editar</button>
-          </div>
+          <span class="status-badge ${statusClass}">
+            ${statusText}
+          </span>
         </div>
 
         <div class="detail-row"><span class="detail-icon">🎶</span> <strong>Charanga:</strong> ${escapeHtml(bolo.charanga || 'MenudoChaperon')}</div>
@@ -1338,7 +1715,7 @@
 
         ${bolo.hasCar ? `
           <div class="detail-row" style="color: var(--status-cyan);">
-            <span class="detail-icon">🚗</span> <strong>Gasolina:</strong> ${bolo.km} km (${formatCurrency(gasMoney)})
+            <span class="detail-icon">🚗</span> <strong>Gasolina:</strong> ${bolo.km} km
           </div>
         ` : ''}
 
@@ -1351,20 +1728,54 @@
       </div>
     `;
 
-    const openEditForm = () => {
-      closeModal('modal-bolo-detail');
-      openModalBolo(bolo.id);
-    };
+    const deleteBtn = document.getElementById('btn-delete-detail-bolo');
+    if (deleteBtn) {
+      deleteBtn.onclick = () => {
+        if (confirm(`¿Estás seguro de que deseas eliminar el bolo "${bolo.name}"?`)) {
+          state.bolos = state.bolos.filter(b => String(b.id) !== String(bolo.id));
+          saveDataToStorage();
+          renderAll();
+          closeModal('modal-bolo-detail');
+        }
+      };
+    }
 
-    if (editBtn) editBtn.onclick = openEditForm;
-    const topEditBtn = document.getElementById('btn-edit-detail-bolo-top');
-    if (topEditBtn) topEditBtn.onclick = openEditForm;
+    if (editBtn) {
+      editBtn.onclick = () => {
+        closeModal('modal-bolo-detail');
+        openModalBolo(bolo.id);
+      };
+    }
 
     modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+
+  function handleBoloCardClick(e, id) {
+    if (e && e.target && (e.target.closest('.status-dropdown-wrapper') || e.target.closest('.btn-maps-subtle'))) {
+      return;
+    }
+    openBoloDetail(id);
+  }
+
+  function exportGlobalHandlers() {
+    window.openBoloDetail = openBoloDetail;
+    window.openTownDetailModal = openTownDetailModal;
+    window.handleBoloCardClick = handleBoloCardClick;
+    window.openModalBolo = openModalBolo;
+    window.closeModal = closeModal;
+    window.handleOpenStatusMenu = handleOpenStatusMenu;
+    window.handleSetStatus = handleSetStatus;
+    window.handleFinancesFilterChange = handleFinancesFilterChange;
+    window.handleCalendarNav = handleCalendarNav;
   }
 
   function closeModal(modalId) {
-    document.getElementById(modalId).classList.add('hidden');
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
   }
 
   // === EXPORTACIÓN E IMPORTACIÓN BACKUP ===
@@ -1428,7 +1839,7 @@
         endTime: '21:30',
         hours: 3,
         price: 120,
-        status: 'pending',
+        status: 'upcoming',
         charanga: 'Charanga La Movida',
         hasCar: true,
         km: 90,
@@ -1502,7 +1913,18 @@
     if (!dateStr) return '';
     const parts = dateStr.split('-');
     if (parts.length === 3) {
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const dateObj = new Date(year, month, day);
+      
+      const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const dayName = dayNames[dateObj.getDay()];
+      
+      const formattedDay = String(day).padStart(2, '0');
+      const formattedMonth = String(month + 1).padStart(2, '0');
+      
+      return `${dayName}, ${formattedDay}/${formattedMonth}/${year}`;
     }
     return dateStr;
   }

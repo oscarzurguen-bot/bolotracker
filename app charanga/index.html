@@ -15,7 +15,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="styles.css?v=9.7.0">
+  <link rel="stylesheet" href="styles.css?v=13.4.0">
 </head>
 <body>
   <div class="app-container">
@@ -79,8 +79,7 @@
 
         <!-- Filtros de bolos -->
         <div class="filter-chips">
-          <button class="chip-filter active" data-filter="all">Todos</button>
-          <button class="chip-filter" data-filter="upcoming">📅 Próximos</button>
+          <button class="chip-filter active" data-filter="upcoming">📅 Próximos</button>
           <button class="chip-filter" data-filter="pending">⏳ Pendientes</button>
           <button class="chip-filter" data-filter="paid">✅ Cobrados</button>
           <button class="chip-filter" data-filter="car">🚗 Con coche</button>
@@ -97,9 +96,16 @@
                   Cómo llegar
                 </a>
               </div>
-              <button class="status-badge pending" data-action="toggle-status" data-bolo-id="sample-1">⏳ Pendiente</button>
+              <div class="status-dropdown-wrapper" onclick="event.stopPropagation();">
+                <button type="button" class="status-badge upcoming" onclick="event.stopPropagation(); handleOpenStatusMenu(event, 'sample-1')">📅 Próximo ▾</button>
+                <div id="status-menu-sample-1" class="status-dropdown-menu hidden" onclick="event.stopPropagation();">
+                  <button type="button" class="status-opt-item active" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-1', 'upcoming')">📅 Próximo</button>
+                  <button type="button" class="status-opt-item" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-1', 'pending')">⏳ Pendiente</button>
+                  <button type="button" class="status-opt-item" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-1', 'paid')">✅ Cobrado</button>
+                </div>
+              </div>
             </div>
-            <div class="item-meta"><span>📅 Hoy (18:30 - 21:30)</span></div>
+            <div class="item-meta"><span>📅 Miércoles, 29/07/2026 (18:30 - 21:30)</span></div>
             <div class="item-pills-row">
               <span class="pill-info pill-charanga">🎶 Charanga La Movida</span>
               <span class="pill-info">🎉 Pasacalles</span>
@@ -108,7 +114,7 @@
             </div>
             <div class="item-footer">
               <div class="footer-prices-left"><span class="price-cache-white">120,00 €</span><span class="price-gas-blue">+27,00 €</span></div>
-              <span class="price-total-orange">147,00 €</span>
+              <span class="price-total-highlight upcoming">147,00 €</span>
             </div>
           </div>
 
@@ -121,9 +127,16 @@
                   Cómo llegar
                 </a>
               </div>
-              <button class="status-badge pending" data-action="toggle-status" data-bolo-id="sample-2">⏳ Pendiente</button>
+              <div class="status-dropdown-wrapper" onclick="event.stopPropagation();">
+                <button type="button" class="status-badge pending" onclick="event.stopPropagation(); handleOpenStatusMenu(event, 'sample-2')">⏳ Pendiente ▾</button>
+                <div id="status-menu-sample-2" class="status-dropdown-menu hidden" onclick="event.stopPropagation();">
+                  <button type="button" class="status-opt-item" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-2', 'upcoming')">📅 Próximo</button>
+                  <button type="button" class="status-opt-item active" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-2', 'pending')">⏳ Pendiente</button>
+                  <button type="button" class="status-opt-item" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-2', 'paid')">✅ Cobrado</button>
+                </div>
+              </div>
             </div>
-            <div class="item-meta"><span>📅 10/08/2026 (17:00 - 20:00)</span></div>
+            <div class="item-meta"><span>📅 Lunes, 10/08/2026 (17:00 - 20:00)</span></div>
             <div class="item-pills-row">
               <span class="pill-info pill-charanga">🎶 Charanga Los Rumberos</span>
               <span class="pill-info">🎉 Procesión</span>
@@ -132,16 +145,78 @@
             </div>
             <div class="item-footer">
               <div class="footer-prices-left"><span class="price-cache-white">150,00 €</span><span class="price-gas-blue">+42,00 €</span></div>
-              <span class="price-total-orange">192,00 €</span>
+              <span class="price-total-highlight pending">192,00 €</span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 2: CALENDARIO ENTERO DE BOLOS -->
+      <section id="view-calendario" class="view-section">
+        <div class="view-header" style="margin-bottom: 12px;">
+          <div class="view-title-group" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <h2 id="calendar-month-title" style="font-family: var(--font-heading); font-size: 20px;">Julio 2026</h2>
+            <div class="calendar-nav-btns" style="display: flex; gap: 6px;">
+              <button type="button" id="btn-cal-prev" class="btn btn-outline btn-sm" onclick="handleCalendarNav('prev')" style="padding: 5px 10px;">◀</button>
+              <button type="button" id="btn-cal-today" class="btn btn-outline btn-sm" onclick="handleCalendarNav('today')" style="padding: 5px 10px;">Hoy</button>
+              <button type="button" id="btn-cal-next" class="btn btn-outline btn-sm" onclick="handleCalendarNav('next')" style="padding: 5px 10px;">▶</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="calendar-container">
+          <div class="calendar-weekdays-grid">
+            <div>Lun</div>
+            <div>Mar</div>
+            <div>Mié</div>
+            <div>Jue</div>
+            <div>Vie</div>
+            <div>Sáb</div>
+            <div>Dom</div>
+          </div>
+          <div id="calendar-days-grid" class="calendar-days-grid">
+            <!-- Celdas renderizadas dinámicamente por JS -->
           </div>
         </div>
       </section>
 
       <!-- VISTA 3: ESTADÍSTICAS -->
       <section id="view-finanzas" class="view-section">
-        <div class="view-header">
-          <h2>Estadísticas</h2>
+        <div class="view-header" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <h2>Estadísticas</h2>
+          </div>
+
+          <!-- BARRA DE FILTROS AÑO Y MES -->
+          <div class="finances-filter-bar" style="display: flex; gap: 10px; width: 100%; margin-top: 4px;">
+            <div style="flex: 1;">
+              <label for="fin-filter-year" style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600;">📅 Año</label>
+              <select id="fin-filter-year" class="form-input" onchange="handleFinancesFilterChange()" style="padding: 6px 10px; font-size: 13px; border-radius: var(--radius-sm);">
+                <option value="all">Todos los años</option>
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <label for="fin-filter-month" style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600;">📆 Mes</label>
+              <select id="fin-filter-month" class="form-input" onchange="handleFinancesFilterChange()" style="padding: 6px 10px; font-size: 13px; border-radius: var(--radius-sm);">
+                <option value="all">Todos los meses</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+            </div>
+          </div>
+          <div id="fin-filter-summary" style="font-size: 12px; color: var(--primary-gold); font-weight: 600; margin-top: 4px;">
+            📊 Mostrando: Todos los bolos
+          </div>
         </div>
 
         <!-- PANEL 1: CACHÉ Y GANANCIAS MUSICALES -->
@@ -162,23 +237,23 @@
           </div>
         </div>
 
-        <!-- PANEL 2 INDEPENDIENTE: KILÓMETROS Y GASOLINA -->
+        <!-- PANEL 2 INDEPENDIENTE: KILÓMETROS Y DESPLAZAMIENTOS -->
         <div class="finance-overview-card" style="margin-top: 16px;">
-          <h3>🚗 Desplazamientos y Gasolina</h3>
+          <h3>🚗 Desplazamientos</h3>
           <div class="finance-row">
             <span>Total Kilómetros recorridos:</span>
             <strong id="fin-total-km" style="color: #60A5FA;">0 km</strong>
           </div>
           <div class="finance-row">
-            <span>Gasolina a Reembolsar (<span id="fin-gas-rate-label">0,30</span> €/km):</span>
-            <strong id="fin-gas-total" class="text-cyan">0,00 €</strong>
+            <span>Nº de pueblos visitados:</span>
+            <strong id="fin-towns-count" style="color: var(--primary-gold);">0 pueblos</strong>
           </div>
         </div>
 
         <div class="chart-box" style="margin-top: 16px; margin-bottom: 16px;">
-          <h3>Bolos por grupo</h3>
-          <div class="instrument-stats-list" id="charanga-stats">
-            <!-- Estadísticas por charanga -->
+          <h3>Estadísticas por Grupo / Charanga</h3>
+          <div id="charanga-stats" class="charanga-stats-grid">
+            <!-- Paneles individuales por charanga -->
           </div>
         </div>
 
@@ -246,16 +321,6 @@
           </div>
         </div>
 
-        <div class="settings-card">
-          <h3>Gestión de Datos</h3>
-          <p class="settings-desc">Tus datos se guardan automáticamente en tu dispositivo y en la nube al sincronizar con Google.</p>
-          <div class="settings-actions">
-            <button id="btn-clear-all" class="btn btn-danger-outline btn-full" onclick="clearAllData()">
-              🗑️ Borrar Todos los Datos
-            </button>
-          </div>
-        </div>
-
         <!-- TARIFA DE GASOLINA (PANEL INDEPENDIENTE) -->
         <div class="settings-card">
           <h3>⛽ Tarifa de Gasolina</h3>
@@ -281,6 +346,17 @@
           </div>
         </div>
 
+        <!-- GESTIÓN DE DATOS (AL FINAL) -->
+        <div class="settings-card">
+          <h3>Gestión de Datos</h3>
+          <p class="settings-desc">Tus datos se guardan automáticamente en tu dispositivo y en la nube al sincronizar con Google.</p>
+          <div class="settings-actions">
+            <button id="btn-clear-all" class="btn btn-danger-outline btn-full" onclick="clearAllData()">
+              🗑️ Borrar Todos los Datos
+            </button>
+          </div>
+        </div>
+
         </div>
       </section>
 
@@ -289,8 +365,12 @@
     <!-- NAVEGACIÓN INFERIOR (BARRA FIJA) -->
     <nav class="bottom-nav">
       <button class="nav-item active" data-target="view-bolos">
-        <div class="nav-icon">📅</div>
+        <div class="nav-icon">📋</div>
         <span>Bolos</span>
+      </button>
+      <button class="nav-item" data-target="view-calendario">
+        <div class="nav-icon">📅</div>
+        <span>Calendario</span>
       </button>
       <button class="nav-item" data-target="view-pasaporte">
         <div class="nav-icon">🛂</div>
@@ -430,8 +510,9 @@
         <div class="modal-body" id="detail-body">
           <!-- Detalle dinámico cargado por JS -->
         </div>
-        <div class="modal-footer-actions">
-          <button id="btn-edit-detail-bolo" class="btn btn-outline btn-full">✏️ Editar Bolo</button>
+        <div class="modal-footer-actions" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border-color);">
+          <button id="btn-edit-detail-bolo" class="btn btn-outline" style="flex: 1; padding: 12px; font-size: 14px; font-weight: 700;">✏️ Editar Bolo</button>
+          <button id="btn-delete-detail-bolo" class="btn btn-danger-outline" style="width: 44px; height: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; border-radius: var(--radius-md);" title="Eliminar Bolo">🗑️</button>
         </div>
       </div>
     </div>
@@ -493,17 +574,28 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-  <script src="app.js?v=11.2.0"></script>
+  <script src="app.js?v=16.4.0"></script>
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
-          console.log('Service Worker de BoloTracker registrado con éxito:', reg.scope);
-          reg.update();
-        }).catch(err => {
-          console.log('Error al registrar Service Worker:', err);
+    // En entorno local (localhost / 127.0.0.1 / file://), limpiar cache y Service Workers antiguos para ver cambios al instante
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' || !window.location.hostname) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          for (let reg of regs) reg.unregister();
         });
-      });
+      }
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          for (let name of names) caches.delete(name);
+        });
+      }
+    } else {
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+            reg.update();
+          });
+        });
+      }
     }
   </script>
 </body>

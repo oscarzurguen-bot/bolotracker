@@ -2063,16 +2063,6 @@
       `último error de sync: ${cloudDebug.lastSyncError || '-'}\núltimo error JS: ${lastJsError || '-'}`;
   }
 
-  // Los popups de Google Sign-In fallan con frecuencia en PWA instaladas (standalone)
-  // y en navegadores móviles: en ese caso usamos signInWithRedirect, que es más fiable
-  // y mantiene la sesión persistida correctamente entre recargas.
-  function shouldUseRedirectLogin() {
-    const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-      window.navigator.standalone === true;
-    const isMobileUA = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-    return isStandalone || isMobileUA;
-  }
-
   function ensureFirebaseReady() {
     if (cloudSync.auth && cloudSync.db) return true;
     if (typeof firebase === 'undefined') {
@@ -2199,16 +2189,10 @@
     provider.addScope('email');
     provider.addScope('profile');
 
-    if (shouldUseRedirectLogin()) {
-      try { sessionStorage.setItem('bolotracker_redirect_pending', '1'); } catch (e) {}
-      cloudSync.auth.signInWithRedirect(provider).catch(err => {
-        try { sessionStorage.removeItem('bolotracker_redirect_pending'); } catch (e) {}
-        console.error('Error lanzando signInWithRedirect:', err);
-        showGoogleLoginError('No se pudo iniciar sesión con Google: ' + err.message);
-      });
-      return;
-    }
-
+    // El popup funciona de forma fiable en escritorio y, comprobado en este proyecto,
+    // también en Android una vez arreglado el crash que impedía completar el ciclo de
+    // signInWithRedirect. Lo probamos siempre primero; solo si el propio popup falla
+    // (bloqueado por el navegador, etc.) caemos a redirección como último recurso.
     cloudSync.auth.signInWithPopup(provider).then(result => {
       applyFirebaseUser(result.user, { showAlert: true });
     }).catch(err => {

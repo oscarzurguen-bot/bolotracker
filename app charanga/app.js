@@ -2022,6 +2022,23 @@
     auth: null
   };
 
+  // Panel de diagnóstico visible en la propia app (Ajustes > Cuenta y Sincronización),
+  // para poder ver el estado real de la sincronización sin necesidad de abrir la
+  // consola del navegador en el móvil.
+  const cloudDebug = {};
+  function setDebugInfo(key, value) {
+    cloudDebug[key] = value;
+    renderDebugUI();
+  }
+  function renderDebugUI() {
+    const el = document.getElementById('cloud-debug-info');
+    if (!el) return;
+    const localUser = cloudSync.user ? cloudSync.user.email : '(ninguna)';
+    const firebaseUser = (cloudSync.auth && cloudSync.auth.currentUser) ? cloudSync.auth.currentUser.email : '(ninguna)';
+    el.textContent = `debug — cuenta guardada: ${localUser} · sesión Firebase activa: ${firebaseUser} · ` +
+      `authState: ${cloudDebug.authState || '-'} · redirect: ${cloudDebug.redirectResult || '-'} · último error de sync: ${cloudDebug.lastSyncError || '-'}`;
+  }
+
   // Los popups de Google Sign-In fallan con frecuencia en PWA instaladas (standalone)
   // y en navegadores móviles: en ese caso usamos signInWithRedirect, que es más fiable
   // y mantiene la sesión persistida correctamente entre recargas.
@@ -2034,7 +2051,10 @@
 
   function ensureFirebaseReady() {
     if (cloudSync.auth && cloudSync.db) return true;
-    if (typeof firebase === 'undefined') return false;
+    if (typeof firebase === 'undefined') {
+      setDebugInfo('lastSyncError', 'SDK de Firebase no cargado (¿sin conexión?)');
+      return false;
+    }
     try {
       if (!firebase.apps.length) {
         firebase.initializeApp(FIREBASE_CONFIG);
@@ -2045,6 +2065,7 @@
       return true;
     } catch (e) {
       console.warn('No se pudo inicializar Firebase:', e);
+      setDebugInfo('lastSyncError', 'init Firebase: ' + e.message);
       return false;
     }
   }
@@ -2076,18 +2097,31 @@
     }
 
     if (ensureFirebaseReady()) {
+      // Solo tratamos como "fallo real" el caso en que nosotros mismos acabamos de
+      // lanzar signInWithRedirect (marcado abajo); así no alarmamos al usuario en
+      // una carga de página normal, pero sí le avisamos si el login que esperaba
+      // completar de verdad no llegó.
+      let wasRedirectPending = false;
+      try { wasRedirectPending = sessionStorage.getItem('bolotracker_redirect_pending') === '1'; } catch (e) {}
+      try { sessionStorage.removeItem('bolotracker_redirect_pending'); } catch (e) {}
+
       cloudSync.auth.getRedirectResult().then(result => {
+        setDebugInfo('redirectResult', result && result.user ? ('ok:' + result.user.email) : 'sin-usuario');
         if (result && result.user) {
           applyFirebaseUser(result.user, { showAlert: true });
+        } else if (wasRedirectPending) {
+          showGoogleLoginError('Google no devolvió ninguna sesión al volver. Vuelve a intentarlo.');
         }
       }).catch(err => {
-        // No mostrar ningún error aquí: esto se ejecuta en cada carga de la página,
-        // incluida una recarga normal sin ningún login en curso, así que un rechazo
-        // aquí no significa que la sesión guardada se haya perdido.
-        console.warn('Redirect Result info (no crítico):', err);
+        console.warn('Redirect Result error:', err);
+        setDebugInfo('redirectResult', 'error:' + (err && err.code ? err.code : err));
+        if (wasRedirectPending) {
+          showGoogleLoginError('No se pudo completar el inicio de sesión con Google: ' + (err && err.message ? err.message : 'error desconocido'));
+        }
       });
 
       cloudSync.auth.onAuthStateChanged(user => {
+        setDebugInfo('authState', user ? ('user:' + user.email) : 'null');
         if (user) {
           applyFirebaseUser(user, {});
         } else if (cloudSync.user) {
@@ -2142,7 +2176,9 @@
     provider.addScope('profile');
 
     if (shouldUseRedirectLogin()) {
+      try { sessionStorage.setItem('bolotracker_redirect_pending', '1'); } catch (e) {}
       cloudSync.auth.signInWithRedirect(provider).catch(err => {
+        try { sessionStorage.removeItem('bolotracker_redirect_pending'); } catch (e) {}
         console.error('Error lanzando signInWithRedirect:', err);
         showGoogleLoginError('No se pudo iniciar sesión con Google: ' + err.message);
       });
@@ -2157,7 +2193,9 @@
         showGoogleLoginError('Este dominio no está autorizado en Firebase. Añade tu dominio en Firebase Console → Authentication → Configuración → Dominios autorizados.');
         return;
       }
+      try { sessionStorage.setItem('bolotracker_redirect_pending', '1'); } catch (e) {}
       cloudSync.auth.signInWithRedirect(provider).catch(err2 => {
+        try { sessionStorage.removeItem('bolotracker_redirect_pending'); } catch (e) {}
         console.error('Error también con redirección:', err2);
         showGoogleLoginError('No se pudo iniciar sesión con Google. Inténtalo de nuevo o prueba desde otro navegador.');
       });
@@ -2260,6 +2298,7 @@
         authBox.style.display = 'none';
       }
     }
+    renderDebugUI();
   }
 
   function getCloudDocId() {
@@ -2313,9 +2352,11 @@
         await syncToCloud();
       }
       recordSyncSuccess();
+      setDebugInfo('lastSyncError', '');
       return { ok: true };
     } catch (err) {
       console.warn('Error sincronizando desde la nube:', err);
+      setDebugInfo('lastSyncError', 'bajada: ' + (err && err.code ? err.code : err.message));
       return { ok: false, reason: 'error', error: err };
     }
   }
@@ -2342,9 +2383,11 @@
         lastUpdated: new Date().toISOString()
       }, { merge: true });
       recordSyncSuccess();
+      setDebugInfo('lastSyncError', '');
       return { ok: true };
     } catch (err) {
       console.error('Error guardando en la nube:', err);
+      setDebugInfo('lastSyncError', 'subida: ' + (err && err.code ? err.code : err.message));
       return { ok: false, reason: 'error', error: err };
     }
   }

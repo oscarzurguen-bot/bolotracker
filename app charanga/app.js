@@ -2081,10 +2081,10 @@
           applyFirebaseUser(result.user, { showAlert: true });
         }
       }).catch(err => {
-        console.warn('Redirect Result info:', err);
-        if (err && err.code && err.code !== 'auth/no-auth-event') {
-          showGoogleLoginError('No se pudo completar el inicio de sesión con Google: ' + err.message);
-        }
+        // No mostrar ningún error aquí: esto se ejecuta en cada carga de la página,
+        // incluida una recarga normal sin ningún login en curso, así que un rechazo
+        // aquí no significa que la sesión guardada se haya perdido.
+        console.warn('Redirect Result info (no crítico):', err);
       });
 
       cloudSync.auth.onAuthStateChanged(user => {

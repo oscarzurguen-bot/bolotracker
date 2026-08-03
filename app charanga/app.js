@@ -34,8 +34,9 @@
     initTheme();
     populateTimeSelects();
     loadDataFromStorage();
-    if (!state.bolos || state.bolos.length === 0) {
-      loadSampleData(false); // Cargar datos demo en la primera apertura si está vacío
+    const hasCloudAccount = !!localStorage.getItem('bolotracker_cloud_user');
+    if ((!state.bolos || state.bolos.length === 0) && !hasCloudAccount) {
+      loadSampleData(false); // Cargar datos demo solo si es un usuario nuevo sin cuenta en la nube
     }
     setupEventListeners();
     renderAll();
@@ -131,8 +132,6 @@
             state.bolos = parsed;
           }
         } catch (e) {}
-      } else {
-        state.bolos = getSampleBolosData();
       }
       if (storedRate) state.gasRate = parseFloat(storedRate) || 0.30;
       if (storedCharangas) state.myCharangas = JSON.parse(storedCharangas);
@@ -2073,6 +2072,9 @@
             const savedUser = localStorage.getItem('bolotracker_cloud_user');
             if (savedUser) {
               try { cloudSync.user = JSON.parse(savedUser); } catch(e) {}
+              // La sesión de Firebase no se restauró (típico tras refrescar en móvil/PWA),
+              // pero seguimos teniendo cuenta vinculada: forzamos igualmente la sincronización.
+              if (cloudSync.user) syncFromCloud();
             }
           }
           updateCloudUI();
@@ -2089,7 +2091,6 @@
   function setupCloudEventListeners() {
     const loginBtn = document.getElementById('btn-google-login');
     const logoutBtn = document.getElementById('btn-google-logout');
-    const manualSyncBtn = document.getElementById('btn-manual-sync');
     const confirmGoogleLoginBtn = document.getElementById('btn-confirm-google-login');
     const nativeGooglePopupBtn = document.getElementById('btn-native-google-popup');
 
@@ -2105,17 +2106,8 @@
     if (logoutBtn) {
       logoutBtn.addEventListener('click', handleGoogleLogout);
     }
-    if (manualSyncBtn) {
-      manualSyncBtn.addEventListener('click', async () => {
-        if (cloudSync.user) {
-          await syncToCloud();
-          await syncFromCloud();
-          alert(`✅ ¡Sincronización en la nube completada!\nCuenta: ${cloudSync.user.email}`);
-        } else {
-          alert('Debes conectar tu cuenta de Google primero.');
-        }
-      });
-    }
+    // Nota: btn-manual-sync ya dispara handleManualSync() vía onclick en el HTML;
+    // no añadir aquí un segundo listener o la sincronización se ejecutaría por duplicado.
   }
 
   function handleGoogleLogin() {
@@ -2246,13 +2238,20 @@
       }
     }
 
-    if (cloudSync.user) {
-      alert('🔄 Sincronizando tus bolos y cobros con la nube...');
-      await syncToCloud();
-      await syncFromCloud();
+    if (!cloudSync.user) {
+      alert('Debes conectar tu cuenta de Google primero.');
+      return;
+    }
+
+    const upResult = await syncToCloud();
+    const downResult = await syncFromCloud();
+
+    if (upResult.ok && downResult.ok) {
       alert(`✅ ¡Sincronización completada con éxito!\nCuenta: ${cloudSync.user.email}`);
     } else {
-      alert('Debes conectar tu cuenta de Google primero.');
+      const failedResult = !upResult.ok ? upResult : downResult;
+      const detail = failedResult.error ? failedResult.error.message : 'No se pudo conectar con la nube.';
+      alert(`⚠️ La sincronización no se completó.\n${detail}\n\nTus datos siguen guardados en este dispositivo. Revisa tu conexión o inténtalo de nuevo más tarde.`);
     }
   }
 
@@ -2321,14 +2320,14 @@
   }
 
   async function syncFromCloud() {
-    if (!cloudSync.user) return;
+    if (!cloudSync.user) return { ok: false, reason: 'no-user' };
     const docId = getCloudDocId();
-    if (!docId) return;
+    if (!docId) return { ok: false, reason: 'no-doc-id' };
 
     if (!cloudSync.db && typeof firebase !== 'undefined' && firebase.firestore) {
       try { cloudSync.db = firebase.firestore(); } catch (e) {}
     }
-    if (!cloudSync.db) return;
+    if (!cloudSync.db) return { ok: false, reason: 'no-db' };
 
     if (cloudSync.auth && !cloudSync.auth.currentUser) {
       try { await cloudSync.auth.signInAnonymously(); } catch (e) {}
@@ -2341,13 +2340,16 @@
       if (docSnap.exists) {
         const cloudData = docSnap.data();
         if (cloudData.bolos && Array.isArray(cloudData.bolos) && cloudData.bolos.length > 0) {
-          const localMap = new Map((state.bolos || []).map(b => [String(b.id), b]));
+          // Los bolos de ejemplo (id "sample-*") nunca deben mezclarse con datos reales de la nube
+          const localMap = new Map((state.bolos || [])
+            .filter(b => !String(b.id).startsWith('sample-'))
+            .map(b => [String(b.id), b]));
           cloudData.bolos.forEach(b => {
             localMap.set(String(b.id), b);
           });
           state.bolos = Array.from(localMap.values());
         } else if (state.bolos && state.bolos.length > 0) {
-          syncToCloud();
+          await syncToCloud();
         }
 
         if (cloudData.myCharangas && Array.isArray(cloudData.myCharangas) && cloudData.myCharangas.length > 0) {
@@ -2364,22 +2366,24 @@
 
         renderAll();
       } else {
-        syncToCloud();
+        await syncToCloud();
       }
+      return { ok: true };
     } catch (err) {
-      console.warn('Modo nube local activado:', err.message);
+      console.warn('Error sincronizando desde la nube:', err);
+      return { ok: false, reason: 'error', error: err };
     }
   }
 
   async function syncToCloud() {
-    if (!cloudSync.user) return;
+    if (!cloudSync.user) return { ok: false, reason: 'no-user' };
     const docId = getCloudDocId();
-    if (!docId) return;
+    if (!docId) return { ok: false, reason: 'no-doc-id' };
 
     if (!cloudSync.db && typeof firebase !== 'undefined' && firebase.firestore) {
       try { cloudSync.db = firebase.firestore(); } catch (e) {}
     }
-    if (!cloudSync.db) return;
+    if (!cloudSync.db) return { ok: false, reason: 'no-db' };
 
     if (cloudSync.auth && !cloudSync.auth.currentUser) {
       try { await cloudSync.auth.signInAnonymously(); } catch (e) {}
@@ -2387,18 +2391,22 @@
 
     try {
       const docRef = cloudSync.db.collection('users').doc(docId);
+      // Los bolos de ejemplo (id "sample-*") nunca deben subirse a la nube
+      const bolosToSync = (state.bolos || []).filter(b => !String(b.id).startsWith('sample-'));
       await docRef.set({
         email: cloudSync.user.email || '',
         displayName: cloudSync.user.displayName || 'Músico',
-        bolos: state.bolos,
+        bolos: bolosToSync,
         myCharangas: state.myCharangas,
         myInstruments: state.myInstruments,
         allInstruments: state.allInstruments,
         gasRate: state.gasRate,
         lastUpdated: new Date().toISOString()
       }, { merge: true });
+      return { ok: true };
     } catch (err) {
       console.error('Error guardando en la nube:', err);
+      return { ok: false, reason: 'error', error: err };
     }
   }
 

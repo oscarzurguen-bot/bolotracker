@@ -1,4 +1,20 @@
 (() => {
+  // Diagnóstico global: capturar cualquier error de JS o promesa no controlada
+  // en cuanto ocurra, incluso antes de que el resto de la app cargue, y guardarlo
+  // para poder verlo en el panel de depuración de Ajustes sin consola del navegador.
+  window.addEventListener('error', (e) => {
+    try {
+      const msg = 'JS: ' + (e.message || 'error desconocido') + ' @ ' + (e.filename || '?').split('/').pop() + ':' + (e.lineno || '?');
+      localStorage.setItem('bolotracker_last_js_error', msg);
+    } catch (err) {}
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    try {
+      const reason = (e.reason && e.reason.message) ? e.reason.message : String(e.reason);
+      localStorage.setItem('bolotracker_last_js_error', 'Promise: ' + reason);
+    } catch (err) {}
+  });
+
   // === ESTADO GLOBAL ===
   let state = {
     bolos: [],
@@ -29,6 +45,7 @@
   }
 
   function initApp() {
+    try { renderDebugUI(); } catch (e) {}
     exportGlobalHandlers();
     state.currentFilter = 'upcoming';
     initTheme();
@@ -1258,10 +1275,14 @@
       }
     });
 
-    document.getElementById('btn-export-data').addEventListener('click', exportBackup);
-    document.getElementById('input-import-data').addEventListener('change', importBackup);
-    document.getElementById('btn-load-sample').addEventListener('click', () => loadSampleData(true));
-    document.getElementById('btn-clear-all').addEventListener('click', clearAllData);
+    const btnExportData = document.getElementById('btn-export-data');
+    if (btnExportData) btnExportData.addEventListener('click', exportBackup);
+    const inputImportData = document.getElementById('input-import-data');
+    if (inputImportData) inputImportData.addEventListener('change', importBackup);
+    const btnLoadSample = document.getElementById('btn-load-sample');
+    if (btnLoadSample) btnLoadSample.addEventListener('click', () => loadSampleData(true));
+    const btnClearAll = document.getElementById('btn-clear-all');
+    if (btnClearAll) btnClearAll.addEventListener('click', clearAllData);
 
     // NAVEGACIÓN DE MESES EN CALENDARIO
     const btnCalPrev = document.getElementById('btn-cal-prev');
@@ -2033,10 +2054,13 @@
   function renderDebugUI() {
     const el = document.getElementById('cloud-debug-info');
     if (!el) return;
+    let lastJsError = '';
+    try { lastJsError = localStorage.getItem('bolotracker_last_js_error') || ''; } catch (e) {}
     const localUser = cloudSync.user ? cloudSync.user.email : '(ninguna)';
     const firebaseUser = (cloudSync.auth && cloudSync.auth.currentUser) ? cloudSync.auth.currentUser.email : '(ninguna)';
-    el.textContent = `debug — cuenta guardada: ${localUser} · sesión Firebase activa: ${firebaseUser} · ` +
-      `authState: ${cloudDebug.authState || '-'} · redirect: ${cloudDebug.redirectResult || '-'} · último error de sync: ${cloudDebug.lastSyncError || '-'}`;
+    el.textContent = `DEBUG BoloTracker\ncuenta guardada: ${localUser}\nsesión Firebase activa: ${firebaseUser}\n` +
+      `authState: ${cloudDebug.authState || '-'}\nredirect: ${cloudDebug.redirectResult || '-'}\n` +
+      `último error de sync: ${cloudDebug.lastSyncError || '-'}\núltimo error JS: ${lastJsError || '-'}`;
   }
 
   // Los popups de Google Sign-In fallan con frecuencia en PWA instaladas (standalone)

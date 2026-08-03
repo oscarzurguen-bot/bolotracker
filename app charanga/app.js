@@ -2005,11 +2005,64 @@
   }
 
   // === MÓDULO DE AUTENTICACIÓN GOOGLE Y SINCRONIZACIÓN NUBE (FIREBASE) ===
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDWz9bNPdl9lx2T14f72eZxJ-jfpQxZl6A",
+    authDomain: "bolotracker-65e60.firebaseapp.com",
+    projectId: "bolotracker-65e60",
+    storageBucket: "bolotracker-65e60.firebasestorage.app",
+    messagingSenderId: "416155530447",
+    appId: "1:416155530447:web:220726bc6dfcb18a65b3ba",
+    measurementId: "G-GL3JZH29J2"
+  };
+  const DEFAULT_AVATAR = 'https://lh3.googleusercontent.com/a/default-user=s96-c';
+
   const cloudSync = {
     user: null,
     db: null,
     auth: null
   };
+
+  // Los popups de Google Sign-In fallan con frecuencia en PWA instaladas (standalone)
+  // y en navegadores móviles: en ese caso usamos signInWithRedirect, que es más fiable
+  // y mantiene la sesión persistida correctamente entre recargas.
+  function shouldUseRedirectLogin() {
+    const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      window.navigator.standalone === true;
+    const isMobileUA = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    return isStandalone || isMobileUA;
+  }
+
+  function ensureFirebaseReady() {
+    if (cloudSync.auth && cloudSync.db) return true;
+    if (typeof firebase === 'undefined') return false;
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+      }
+      cloudSync.auth = firebase.auth();
+      cloudSync.db = firebase.firestore();
+      cloudSync.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+      return true;
+    } catch (e) {
+      console.warn('No se pudo inicializar Firebase:', e);
+      return false;
+    }
+  }
+
+  function applyFirebaseUser(user, opts = {}) {
+    cloudSync.user = {
+      uid: user.uid,
+      displayName: user.displayName || 'Músico',
+      email: user.email || '',
+      photoURL: user.photoURL || DEFAULT_AVATAR
+    };
+    localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
+    updateCloudUI();
+    syncFromCloud();
+    if (opts.showAlert) {
+      alert(`✅ ¡Cuenta de Google conectada (${user.email})!`);
+    }
+  }
 
   function initCloudSync() {
     // Cargar cuenta de Google guardada en este dispositivo
@@ -2022,66 +2075,31 @@
       }
     }
 
-    if (typeof firebase !== 'undefined') {
-      const firebaseConfig = {
-        apiKey: "AIzaSyDWz9bNPdl9lx2T14f72eZxJ-jfpQxZl6A",
-        authDomain: "bolotracker-65e60.firebaseapp.com",
-        projectId: "bolotracker-65e60",
-        storageBucket: "bolotracker-65e60.firebasestorage.app",
-        messagingSenderId: "416155530447",
-        appId: "1:416155530447:web:220726bc6dfcb18a65b3ba",
-        measurementId: "G-GL3JZH29J2"
-      };
-
-      try {
-        if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
+    if (ensureFirebaseReady()) {
+      cloudSync.auth.getRedirectResult().then(result => {
+        if (result && result.user) {
+          applyFirebaseUser(result.user, { showAlert: true });
         }
-        cloudSync.auth = firebase.auth();
-        cloudSync.db = firebase.firestore();
+      }).catch(err => {
+        console.warn('Redirect Result info:', err);
+        if (err && err.code && err.code !== 'auth/no-auth-event') {
+          showGoogleLoginError('No se pudo completar el inicio de sesión con Google: ' + err.message);
+        }
+      });
 
-        cloudSync.auth.getRedirectResult().then(result => {
-          if (result && result.user) {
-            const user = result.user;
-            cloudSync.user = {
-              uid: user.uid,
-              displayName: user.displayName || 'Músico',
-              email: user.email || '',
-              photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-            };
-            localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
-            updateCloudUI();
-            syncFromCloud();
-            alert(`✅ ¡Cuenta de Google conectada (${user.email})!`);
-          }
-        }).catch(err => {
-          console.warn('Redirect Result info:', err);
-        });
-
-        cloudSync.auth.onAuthStateChanged(user => {
-          if (user) {
-            cloudSync.user = {
-              uid: user.uid,
-              displayName: user.displayName || 'Músico',
-              email: user.email || '',
-              photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-            };
-            localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
-            syncFromCloud();
-          } else {
-            const savedUser = localStorage.getItem('bolotracker_cloud_user');
-            if (savedUser) {
-              try { cloudSync.user = JSON.parse(savedUser); } catch(e) {}
-              // La sesión de Firebase no se restauró (típico tras refrescar en móvil/PWA),
-              // pero seguimos teniendo cuenta vinculada: forzamos igualmente la sincronización.
-              if (cloudSync.user) syncFromCloud();
-            }
-          }
+      cloudSync.auth.onAuthStateChanged(user => {
+        if (user) {
+          applyFirebaseUser(user, {});
+        } else if (cloudSync.user) {
+          // La sesión de Firebase no está activa ahora mismo (p.ej. tras refrescar en
+          // móvil/PWA), pero hay una cuenta vinculada guardada: forzamos igualmente
+          // el intento de sincronización en vez de quedarnos solo con datos locales.
+          syncFromCloud();
           updateCloudUI();
-        });
-      } catch (err) {
-        console.log('Firebase local fallback activo:', err);
-      }
+        } else {
+          updateCloudUI();
+        }
+      });
     }
 
     setupCloudEventListeners();
@@ -2091,7 +2109,7 @@
   function setupCloudEventListeners() {
     const loginBtn = document.getElementById('btn-google-login');
     const logoutBtn = document.getElementById('btn-google-logout');
-    const confirmGoogleLoginBtn = document.getElementById('btn-confirm-google-login');
+    const retryLoginBtn = document.getElementById('btn-retry-google-login');
     const nativeGooglePopupBtn = document.getElementById('btn-native-google-popup');
 
     if (loginBtn) {
@@ -2100,8 +2118,11 @@
     if (nativeGooglePopupBtn) {
       nativeGooglePopupBtn.addEventListener('click', handleGoogleLogin);
     }
-    if (confirmGoogleLoginBtn) {
-      confirmGoogleLoginBtn.addEventListener('click', executeGoogleLoginFromModal);
+    if (retryLoginBtn) {
+      retryLoginBtn.addEventListener('click', () => {
+        closeModal('modal-google-login');
+        handleGoogleLogin();
+      });
     }
     if (logoutBtn) {
       logoutBtn.addEventListener('click', handleGoogleLogout);
@@ -2111,123 +2132,51 @@
   }
 
   function handleGoogleLogin() {
-    // Inicialización de seguridad si Firebase no estuviera listo aún
-    if (!cloudSync.auth && typeof firebase !== 'undefined') {
-      const firebaseConfig = {
-        apiKey: "AIzaSyDWz9bNPdl9lx2T14f72eZxJ-jfpQxZl6A",
-        authDomain: "bolotracker-65e60.firebaseapp.com",
-        projectId: "bolotracker-65e60",
-        storageBucket: "bolotracker-65e60.firebasestorage.app",
-        messagingSenderId: "416155530447",
-        appId: "1:416155530447:web:220726bc6dfcb18a65b3ba",
-        measurementId: "G-GL3JZH29J2"
-      };
-      try {
-        if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
-        }
-        cloudSync.auth = firebase.auth();
-        cloudSync.db = firebase.firestore();
-      } catch (e) {
-        console.warn('Error inicializando Firebase en clic:', e);
-      }
+    if (!ensureFirebaseReady()) {
+      showGoogleLoginError('No se pudo conectar con el servicio de Google. Revisa tu conexión a internet e inténtalo de nuevo.');
+      return;
     }
 
-    if (cloudSync.auth) {
-      try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        provider.addScope('email');
-        provider.addScope('profile');
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
 
-        cloudSync.auth.signInWithPopup(provider).then(result => {
-          const user = result.user;
-          cloudSync.user = {
-            uid: user.uid,
-            displayName: user.displayName || 'Músico',
-            email: user.email || '',
-            photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-          };
-          localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
-          updateCloudUI();
-          syncToCloud();
-          syncFromCloud();
-          alert(`✅ ¡Cuenta de Google conectada (${user.email})!`);
-        }).catch(err => {
-          console.warn('signInWithPopup falló en móvil, activando fallback seguro:', err);
-          if (err && err.code === 'auth/unauthorized-domain') {
-            alert('⚠️ Para habilitar el pop-up de Google en Cloudflare, debes agregar "bolotracker.pages.dev" en Firebase Console -> Authentication -> Configuración -> Dominios Autorizados.');
-          }
-          promptUserEmailFallback();
-        });
-      } catch (e) {
-        console.error('Error lanzando Google Sign-In:', e);
-        promptUserEmailFallback();
-      }
-    } else {
-      promptUserEmailFallback();
+    if (shouldUseRedirectLogin()) {
+      cloudSync.auth.signInWithRedirect(provider).catch(err => {
+        console.error('Error lanzando signInWithRedirect:', err);
+        showGoogleLoginError('No se pudo iniciar sesión con Google: ' + err.message);
+      });
+      return;
     }
+
+    cloudSync.auth.signInWithPopup(provider).then(result => {
+      applyFirebaseUser(result.user, { showAlert: true });
+    }).catch(err => {
+      console.warn('signInWithPopup falló, probando con redirección:', err);
+      if (err && err.code === 'auth/unauthorized-domain') {
+        showGoogleLoginError('Este dominio no está autorizado en Firebase. Añade tu dominio en Firebase Console → Authentication → Configuración → Dominios autorizados.');
+        return;
+      }
+      cloudSync.auth.signInWithRedirect(provider).catch(err2 => {
+        console.error('Error también con redirección:', err2);
+        showGoogleLoginError('No se pudo iniciar sesión con Google. Inténtalo de nuevo o prueba desde otro navegador.');
+      });
+    });
   }
 
   // Exponer al scope global de window para garantizar compatibilidad con onclick
   window.handleGoogleLogin = handleGoogleLogin;
 
-  function promptUserEmailFallback() {
+  function showGoogleLoginError(message) {
     const modal = document.getElementById('modal-google-login');
+    const text = document.getElementById('google-login-error-text');
+    if (text) text.textContent = message;
     if (modal) {
       modal.classList.remove('hidden');
       modal.style.display = 'flex';
     } else {
-      const email = prompt('🔑 Escribe tu correo electrónico de Google para vincular tus bolos en la nube:');
-      if (email && email.includes('@')) {
-        const cleanEmail = email.trim().toLowerCase();
-        const namePart = cleanEmail.split('@')[0];
-        const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-        const userUid = 'user_' + cleanEmail.replace(/[^a-z0-9]/g, '_');
-
-        cloudSync.user = {
-          uid: userUid,
-          displayName: displayName,
-          email: cleanEmail,
-          photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(namePart)}`
-        };
-
-        localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
-        updateCloudUI();
-        syncToCloud();
-        syncFromCloud();
-        alert(`✅ ¡Cuenta de Google vinculada con éxito (${cleanEmail})!\nTus bolos están sincronizados en la nube.`);
-      }
+      alert('⚠️ ' + message);
     }
-  }
-
-  function executeGoogleLoginFromModal() {
-    const emailInput = document.getElementById('google-email-input');
-    const inputEmail = emailInput ? emailInput.value.trim() : '';
-
-    if (!inputEmail || !inputEmail.includes('@')) {
-      alert('Por favor, escribe un correo electrónico de Google válido.');
-      if (emailInput) emailInput.focus();
-      return;
-    }
-
-    const cleanEmail = inputEmail.trim();
-    const namePart = cleanEmail.split('@')[0];
-    const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-    const userUid = 'user_' + cleanEmail.toLowerCase().replace(/[^a-z0-9]/g, '_');
-
-    cloudSync.user = {
-      uid: userUid,
-      displayName: displayName,
-      email: cleanEmail,
-      photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(namePart)}`
-    };
-
-    localStorage.setItem('bolotracker_cloud_user', JSON.stringify(cloudSync.user));
-    updateCloudUI();
-    syncToCloud();
-
-    closeModal('modal-google-login');
-    alert(`✅ ¡Cuenta de Google vinculada con éxito (${cleanEmail})!\nTus bolos y cobros están sincronizados en la nube.`);
   }
 
   async function handleManualSync() {
@@ -2264,6 +2213,7 @@
       } catch (e) {}
       cloudSync.user = null;
       localStorage.removeItem('bolotracker_cloud_user');
+      localStorage.removeItem('bolotracker_last_sync');
       updateCloudUI();
       alert('👋 Has cerrado sesión de Google. La app seguirá guardando tus datos en este dispositivo.');
     }
@@ -2299,6 +2249,7 @@
       if (avatar) avatar.src = cloudSync.user.photoURL || 'https://lh3.googleusercontent.com/a/default-user=s96-c';
       if (nameEl) nameEl.textContent = cloudSync.user.displayName || 'Músico';
       if (emailEl) emailEl.textContent = cloudSync.user.email || '';
+      updateLastSyncUI();
     } else {
       if (unauthBox) {
         unauthBox.classList.remove('hidden');
@@ -2324,14 +2275,7 @@
     const docId = getCloudDocId();
     if (!docId) return { ok: false, reason: 'no-doc-id' };
 
-    if (!cloudSync.db && typeof firebase !== 'undefined' && firebase.firestore) {
-      try { cloudSync.db = firebase.firestore(); } catch (e) {}
-    }
-    if (!cloudSync.db) return { ok: false, reason: 'no-db' };
-
-    if (cloudSync.auth && !cloudSync.auth.currentUser) {
-      try { await cloudSync.auth.signInAnonymously(); } catch (e) {}
-    }
+    if (!ensureFirebaseReady()) return { ok: false, reason: 'no-db' };
 
     try {
       const docRef = cloudSync.db.collection('users').doc(docId);
@@ -2368,6 +2312,7 @@
       } else {
         await syncToCloud();
       }
+      recordSyncSuccess();
       return { ok: true };
     } catch (err) {
       console.warn('Error sincronizando desde la nube:', err);
@@ -2380,14 +2325,7 @@
     const docId = getCloudDocId();
     if (!docId) return { ok: false, reason: 'no-doc-id' };
 
-    if (!cloudSync.db && typeof firebase !== 'undefined' && firebase.firestore) {
-      try { cloudSync.db = firebase.firestore(); } catch (e) {}
-    }
-    if (!cloudSync.db) return { ok: false, reason: 'no-db' };
-
-    if (cloudSync.auth && !cloudSync.auth.currentUser) {
-      try { await cloudSync.auth.signInAnonymously(); } catch (e) {}
-    }
+    if (!ensureFirebaseReady()) return { ok: false, reason: 'no-db' };
 
     try {
       const docRef = cloudSync.db.collection('users').doc(docId);
@@ -2403,11 +2341,35 @@
         gasRate: state.gasRate,
         lastUpdated: new Date().toISOString()
       }, { merge: true });
+      recordSyncSuccess();
       return { ok: true };
     } catch (err) {
       console.error('Error guardando en la nube:', err);
       return { ok: false, reason: 'error', error: err };
     }
+  }
+
+  function recordSyncSuccess() {
+    localStorage.setItem('bolotracker_last_sync', new Date().toISOString());
+    updateLastSyncUI();
+  }
+
+  function updateLastSyncUI() {
+    const el = document.getElementById('cloud-last-sync');
+    if (!el) return;
+    const iso = localStorage.getItem('bolotracker_last_sync');
+    if (!iso) {
+      el.textContent = '';
+      return;
+    }
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) {
+      el.textContent = '';
+      return;
+    }
+    const dateStr = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+    const timeStr = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    el.textContent = `Última sincronización: ${dateStr} ${timeStr}`;
   }
 
   function escapeHtml(str) {

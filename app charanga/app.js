@@ -1033,7 +1033,61 @@
       e.stopPropagation();
       if (typeof e.preventDefault === 'function') e.preventDefault();
     }
-    openBoloDetail(boloId);
+    const bolo = state.bolos.find(b => String(b.id) === String(boloId));
+    const sameDayBolos = bolo ? state.bolos.filter(b => b.date === bolo.date) : [];
+
+    if (sameDayBolos.length > 1) {
+      openDayEventsModal(bolo.date, sameDayBolos);
+    } else {
+      openBoloDetail(boloId);
+    }
+  }
+
+  function openDayEventsModal(dateStr, dayBolos) {
+    const modal = document.getElementById('modal-day-events');
+    const body = document.getElementById('day-events-body');
+    const titleEl = document.getElementById('day-events-title');
+    if (!modal || !body) return;
+
+    if (titleEl) titleEl.textContent = `🗓️ Bolos del ${formatDateStr(dateStr)}`;
+
+    const sorted = [...dayBolos].sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+    body.innerHTML = sorted.map(b => {
+      let statusClass = 'pending';
+      let statusText = '⏳ Pendiente';
+      if (b.status === 'upcoming') {
+        statusClass = 'upcoming';
+        statusText = '📅 Próximo';
+      } else if (b.status === 'paid') {
+        statusClass = 'paid';
+        statusText = '✅ Cobrado';
+      }
+      const subParts = [];
+      if (b.startTime) subParts.push(`🕐 ${escapeHtml(b.startTime)}`);
+      if (b.charanga) subParts.push(`🎶 ${escapeHtml(b.charanga)}`);
+
+      return `
+        <button type="button" class="day-event-item" data-bolo-id="${b.id}">
+          <div class="day-event-item-main">
+            <strong>📍 ${escapeHtml(b.name || 'Bolo')}</strong>
+            <span class="status-badge ${statusClass}">${statusText}</span>
+          </div>
+          <div class="day-event-item-sub">${subParts.join(' · ')}</div>
+        </button>
+      `;
+    }).join('');
+
+    body.querySelectorAll('.day-event-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const id = item.getAttribute('data-bolo-id');
+        closeModal('modal-day-events');
+        openBoloDetail(id);
+      });
+    });
+
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
   }
 
   function handleCalendarNav(action) {
@@ -1581,6 +1635,7 @@
     }
 
     modal.classList.remove('hidden');
+    modal.style.display = 'flex';
 
     // Resetear scroll siempre arriba del todo al abrir la modal
     const modalContent = modal.querySelector('.modal-content');
@@ -1793,8 +1848,11 @@
   function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
+      // Solo la clase 'hidden' controla la visibilidad (display:none !important en CSS).
+      // No fijar aquí un display inline: dejaría "pegado" ese valor y las funciones que
+      // abren el modal solo quitando la clase (sin volver a fijar display) dejarían de
+      // funcionar la próxima vez, aunque estemos en otra pantalla de la app.
       modal.classList.add('hidden');
-      modal.style.display = 'none';
     }
   }
 

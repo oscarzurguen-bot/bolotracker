@@ -15,7 +15,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="styles.css?v=13.8.0">
+  <link rel="stylesheet" href="styles.css?v=13.9.0">
 </head>
 <body>
   <div class="app-container">
@@ -517,6 +517,19 @@
       </div>
     </div>
 
+    <!-- MODAL: EVENTOS DE UN DÍA (cuando hay varios bolos el mismo día) -->
+    <div id="modal-day-events" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="day-events-title">Bolos de este día</h3>
+          <button type="button" class="btn-close-modal" data-close="modal-day-events" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body" id="day-events-body">
+          <!-- Lista dinámica de bolos del día, cargada por JS -->
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL 4: FICHA COMPLETA DEL PUEBLO -->
     <div id="modal-town-detail" class="modal-overlay hidden">
       <div class="modal-content">
@@ -561,7 +574,7 @@
   <!-- Google Identity Services: inicio de sesión sin popup ni redirección de página completa -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <script src="app.js?v=17.5.0"></script>
+  <script src="app.js?v=17.6.0"></script>
   <script>
     // En entorno local (localhost / 127.0.0.1 / file://), limpiar cache y Service Workers antiguos para ver cambios al instante
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' || !window.location.hostname) {

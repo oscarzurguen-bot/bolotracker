@@ -15,6 +15,11 @@
     } catch (err) {}
   });
 
+  // Limpiar cualquier error guardado de una carga anterior: si esta carga no
+  // produce ningún error nuevo, el panel de depuración no debe seguir
+  // mostrando indefinidamente un aviso de una versión ya corregida.
+  try { localStorage.removeItem('bolotracker_last_js_error'); } catch (err) {}
+
   // === ESTADO GLOBAL ===
   let state = {
     bolos: [],

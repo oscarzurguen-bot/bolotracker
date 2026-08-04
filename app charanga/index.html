@@ -581,15 +581,9 @@
               <div id="edit-charanga-color-menu" class="color-picker-menu hidden"></div>
             </div>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="edit-charanga-gas-rate">Gasolina (€/km)</label>
-              <input type="number" id="edit-charanga-gas-rate" class="form-input" step="0.01" min="0" placeholder="0.30">
-            </div>
-            <div class="form-group">
-              <label for="edit-charanga-hourly-rate">Precio por hora (€/h)</label>
-              <input type="number" id="edit-charanga-hourly-rate" class="form-input" step="1" min="0" placeholder="0">
-            </div>
+          <div class="form-group">
+            <label for="edit-charanga-gas-rate">Gasolina (€/km)</label>
+            <input type="number" id="edit-charanga-gas-rate" class="form-input" step="0.01" min="0" placeholder="0.30">
           </div>
           <button type="button" id="btn-save-edit-charanga" class="btn btn-primary btn-full" style="margin-top: 4px;">Guardar Cambios</button>
         </div>
@@ -606,7 +600,7 @@
   <!-- Google Identity Services: inicio de sesión sin popup ni redirección de página completa -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <script src="app.js?v=18.0.0"></script>
+  <script src="app.js?v=18.1.0"></script>
   <script>
     // En entorno local (localhost / 127.0.0.1 / file://), limpiar cache y Service Workers antiguos para ver cambios al instante
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' || !window.location.hostname) {

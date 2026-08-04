@@ -1863,6 +1863,14 @@ input:checked + .slider:before {
   font-size: 13px;
 }
 
+.gas-calc-input {
+  background-color: rgba(6, 182, 212, 0.1) !important;
+  border-color: rgba(6, 182, 212, 0.35) !important;
+  color: var(--status-cyan) !important;
+  font-weight: 700;
+  padding: 6px 10px !important;
+}
+
 /* CUADRÍCULA DE SELECCIÓN DE MÚSICOS */
 .form-sub-label {
   font-size: 12px;
@@ -1923,6 +1931,47 @@ input:checked + .slider:before {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
+}
+
+.charanga-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.charanga-settings-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.charanga-settings-card:hover {
+  border-color: var(--primary-gold);
+}
+
+.charanga-settings-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.charanga-settings-card-info strong {
+  font-size: 14px;
+  color: var(--text-title);
+}
+
+.charanga-settings-card-rates {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .tag-chip {

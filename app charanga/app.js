@@ -26,6 +26,8 @@
     gasRate: 0.30,
     myCharangas: ['Charanga La Movida', 'Charanga Los Rumberos'],
     charangaColors: {},
+    charangaGasRates: {},
+    charangaHourlyRates: {},
     allInstruments: ['Bombo', 'Caja', 'Trompeta', 'Saxofón', 'Trombón', 'Piano', 'Bombardino'],
     myInstruments: ['Bombo', 'Caja', 'Trompeta', 'Saxofón', 'Trombón', 'Piano', 'Bombardino'],
     myMembers: [
@@ -145,6 +147,8 @@
       const storedRate = localStorage.getItem('charanga_gasRate');
       const storedCharangas = localStorage.getItem('charanga_myCharangas');
       const storedCharangaColors = localStorage.getItem('charanga_charangaColors');
+      const storedCharangaGasRates = localStorage.getItem('charanga_charangaGasRates');
+      const storedCharangaHourlyRates = localStorage.getItem('charanga_charangaHourlyRates');
       const storedMembers = localStorage.getItem('charanga_myMembers');
       const storedAllInstruments = localStorage.getItem('charanga_allInstruments');
       const storedMyInstruments = localStorage.getItem('charanga_myInstruments');
@@ -161,6 +165,12 @@
       if (storedCharangas) state.myCharangas = JSON.parse(storedCharangas);
       if (storedCharangaColors) {
         try { state.charangaColors = JSON.parse(storedCharangaColors); } catch (e) {}
+      }
+      if (storedCharangaGasRates) {
+        try { state.charangaGasRates = JSON.parse(storedCharangaGasRates); } catch (e) {}
+      }
+      if (storedCharangaHourlyRates) {
+        try { state.charangaHourlyRates = JSON.parse(storedCharangaHourlyRates); } catch (e) {}
       }
       if (storedMembers) state.myMembers = JSON.parse(storedMembers);
       if (storedAllInstruments) state.allInstruments = JSON.parse(storedAllInstruments);
@@ -190,9 +200,6 @@
         state.myInstruments = [...state.allInstruments];
       }
 
-      // Actualizar input de tarifa en ajustes
-      const gasInput = document.getElementById('gas-rate-input');
-      if (gasInput) gasInput.value = state.gasRate;
       updateGasRateDisplays();
     } catch (e) {
       console.error('Error cargando datos:', e);
@@ -204,6 +211,8 @@
     localStorage.setItem('charanga_gasRate', state.gasRate.toString());
     localStorage.setItem('charanga_myCharangas', JSON.stringify(state.myCharangas));
     localStorage.setItem('charanga_charangaColors', JSON.stringify(state.charangaColors));
+    localStorage.setItem('charanga_charangaGasRates', JSON.stringify(state.charangaGasRates));
+    localStorage.setItem('charanga_charangaHourlyRates', JSON.stringify(state.charangaHourlyRates));
     localStorage.setItem('charanga_myMembers', JSON.stringify(state.myMembers));
     localStorage.setItem('charanga_allInstruments', JSON.stringify(state.allInstruments));
     localStorage.setItem('charanga_myInstruments', JSON.stringify(state.myInstruments));
@@ -315,16 +324,35 @@
     return CHARANGA_COLOR_PALETTE[getCharangaColorIndex(name)];
   }
 
-  // strong=true da una versión de fondo más intensa (para marcar la tarjeta
-  // seleccionada del selector de grupo, donde el color de fondo es el propio
-  // indicador de selección en vez del habitual borde dorado).
-  function charangaColorStyle(name, strong = false) {
+  function charangaColorStyle(name) {
     const c = getCharangaColor(name);
-    const bgAlpha = strong ? 0.35 : 0.15;
-    const borderAlpha = strong ? 0.9 : 0.35;
-    let style = `background-color:rgba(${c.rgb},${bgAlpha});color:${c.text};border-color:rgba(${c.rgb},${borderAlpha});`;
-    if (strong) style += `box-shadow:0 0 0 1px rgba(${c.rgb},0.5);`;
-    return style;
+    return `background-color:rgba(${c.rgb},0.15);color:${c.text};border-color:rgba(${c.rgb},0.35);`;
+  }
+
+  function getCharangaGasRate(name) {
+    if (name && typeof state.charangaGasRates[name] === 'number') {
+      return state.charangaGasRates[name];
+    }
+    return state.gasRate;
+  }
+
+  function getCharangaHourlyRate(name) {
+    if (name && typeof state.charangaHourlyRates[name] === 'number') {
+      return state.charangaHourlyRates[name];
+    }
+    return 0;
+  }
+
+  // Importe de gasolina de un bolo: usa el valor guardado explícitamente si
+  // existe (el usuario pudo modificarlo a mano), y si no, lo calcula a partir
+  // del km y la tarifa del grupo (compatibilidad con bolos guardados antes de
+  // que este campo existiera como tal).
+  function getBoloGasAmount(bolo) {
+    if (typeof bolo.gasAmount === 'number') return bolo.gasAmount;
+    if (bolo.hasCar && bolo.km) {
+      return parseFloat(bolo.km) * getCharangaGasRate(bolo.charanga);
+    }
+    return 0;
   }
 
   function suggestNextCharangaColorIndex() {
@@ -362,13 +390,23 @@
     const container = document.getElementById('settings-charangas-list');
     if (!container) return;
 
-    container.innerHTML = state.myCharangas.map(ch => `
-      <span class="tag-chip btn-edit-charanga" data-charanga="${escapeHtml(ch)}" style="cursor: pointer;" title="Editar grupo">
-        <span class="charanga-color-dot-static" style="background-color:${getCharangaColor(ch).text};"></span>
-        🎶 ${escapeHtml(ch)}
-        <button type="button" class="tag-remove btn-del-charanga" data-charanga="${escapeHtml(ch)}" title="Eliminar grupo">&times;</button>
-      </span>
-    `).join('');
+    container.innerHTML = state.myCharangas.map(ch => {
+      const gasRate = getCharangaGasRate(ch);
+      const hourlyRate = getCharangaHourlyRate(ch);
+      const ratesText = hourlyRate > 0
+        ? `⛽ ${gasRate.toFixed(2)} €/km · ⏱️ ${hourlyRate.toFixed(2)} €/h`
+        : `⛽ ${gasRate.toFixed(2)} €/km · toca para añadir precio/hora`;
+      return `
+        <div class="charanga-settings-card btn-edit-charanga" data-charanga="${escapeHtml(ch)}">
+          <span class="charanga-color-dot-static" style="background-color:${getCharangaColor(ch).text};"></span>
+          <div class="charanga-settings-card-info">
+            <strong>🎶 ${escapeHtml(ch)}</strong>
+            <span class="charanga-settings-card-rates">${ratesText}</span>
+          </div>
+          <button type="button" class="tag-remove btn-del-charanga" data-charanga="${escapeHtml(ch)}" title="Eliminar grupo">&times;</button>
+        </div>
+      `;
+    }).join('');
 
     container.querySelectorAll('.btn-del-charanga').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -376,6 +414,8 @@
         const name = btn.getAttribute('data-charanga');
         state.myCharangas = state.myCharangas.filter(c => c !== name);
         delete state.charangaColors[name];
+        delete state.charangaGasRates[name];
+        delete state.charangaHourlyRates[name];
         saveDataToStorage();
         renderAll();
       });
@@ -397,12 +437,16 @@
     const nameInput = document.getElementById('edit-charanga-name');
     const originalInput = document.getElementById('edit-charanga-original-name');
     const swatchBtn = document.getElementById('btn-edit-charanga-color');
+    const gasRateInput = document.getElementById('edit-charanga-gas-rate');
+    const hourlyRateInput = document.getElementById('edit-charanga-hourly-rate');
     if (!modal || !nameInput || !originalInput || !swatchBtn) return;
 
     originalInput.value = name;
     nameInput.value = name;
     editCharangaColorIndex = getCharangaColorIndex(name);
     renderColorPickerButton(swatchBtn, editCharangaColorIndex);
+    if (gasRateInput) gasRateInput.value = getCharangaGasRate(name);
+    if (hourlyRateInput) hourlyRateInput.value = getCharangaHourlyRate(name) || '';
 
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
@@ -416,13 +460,13 @@
 
     let html = state.myCharangas.map((ch, idx) => {
       const isChecked = currentSelected === ch || (idx === 0 && !state.myCharangas.includes(currentSelected) && currentSelected !== 'Otra');
-      const labelColor = getCharangaColor(ch).text;
       return `
         <label class="radio-card">
           <input type="radio" name="charanga" value="${escapeHtml(ch)}" ${isChecked ? 'checked' : ''}>
-          <div class="radio-content" style="${charangaColorStyle(ch, isChecked)}">
+          <div class="radio-content">
+            <span class="charanga-color-dot-static" style="background-color:${getCharangaColor(ch).text};"></span>
             <span class="radio-icon">🎶</span>
-            <span class="radio-label" style="color:${labelColor};">${escapeHtml(ch)}</span>
+            <span class="radio-label">${escapeHtml(ch)}</span>
           </div>
         </label>
       `;
@@ -450,6 +494,8 @@
         } else {
           if (otherContainer) otherContainer.classList.add('hidden');
         }
+        updateGasCalc();
+        updatePriceSuggestion();
       });
     });
   }
@@ -518,7 +564,7 @@
     state.bolos.forEach(b => {
       const bStatus = b.status || 'pending';
       const cachePrice = parseFloat(b.price) || 0;
-      const gasMoney = (b.hasCar && b.km) ? (parseFloat(b.km) * state.gasRate) : 0;
+      const gasMoney = getBoloGasAmount(b);
       const totalBolo = cachePrice + gasMoney;
 
       if (bStatus === 'pending') {
@@ -601,7 +647,7 @@
       }
 
       const cachePrice = parseFloat(bolo.price) || 0;
-      const gasMoney = bolo.hasCar && bolo.km ? (parseFloat(bolo.km) * state.gasRate) : 0;
+      const gasMoney = getBoloGasAmount(bolo);
       const totalPrice = cachePrice + gasMoney;
       
       const instrumentIcon = getInstrumentIcon(bolo.instrument);
@@ -742,7 +788,7 @@
 
     filteredBolos.forEach(b => {
       const price = parseFloat(b.price) || 0;
-      const gasMoney = (b.hasCar && b.km) ? (parseFloat(b.km) * state.gasRate) : 0;
+      const gasMoney = getBoloGasAmount(b);
 
       if (b.status === 'paid') paidTotal += price;
       else if (b.status === 'pending') pendingTotal += price;
@@ -858,7 +904,7 @@
 
           charBolos.forEach(b => {
             const cachePrice = parseFloat(b.price) || 0;
-            const gasMoney = (b.hasCar && b.km) ? (parseFloat(b.km) * state.gasRate) : 0;
+            const gasMoney = getBoloGasAmount(b);
             const total = cachePrice + gasMoney;
 
             if (b.status === 'paid') {
@@ -976,7 +1022,7 @@
 
     html += townData.bolos.map(b => {
       const cachePrice = parseFloat(b.price) || 0;
-      const gasMoney = (b.hasCar && b.km) ? (parseFloat(b.km) * state.gasRate) : 0;
+      const gasMoney = getBoloGasAmount(b);
       const totalBolo = cachePrice + gasMoney;
       const isPaid = b.status === 'paid';
       const timeStr = b.startTime ? `${b.startTime}${b.endTime ? ' - ' + b.endTime : ''}` : (b.time ? b.time + 'h' : '');
@@ -1317,31 +1363,25 @@
     kmInput.addEventListener('input', updateGasCalc);
 
     // CÁLCULO AUTOMÁTICO DE DURACIÓN EN HORAS SEGÚN HORAS DE INICIO Y FIN
+    // (y, con ello, sugerencia de caché según el precio/hora del grupo elegido)
     const startTimeInput = document.getElementById('bolo-start-time');
     const endTimeInput = document.getElementById('bolo-end-time');
+    const onTimesChanged = () => { calcHoursFromTimes(); updatePriceSuggestion(); };
 
     if (startTimeInput) {
-      startTimeInput.addEventListener('change', calcHoursFromTimes);
-      startTimeInput.addEventListener('input', calcHoursFromTimes);
+      startTimeInput.addEventListener('change', onTimesChanged);
+      startTimeInput.addEventListener('input', onTimesChanged);
     }
     if (endTimeInput) {
-      endTimeInput.addEventListener('change', calcHoursFromTimes);
-      endTimeInput.addEventListener('input', calcHoursFromTimes);
+      endTimeInput.addEventListener('change', onTimesChanged);
+      endTimeInput.addEventListener('input', onTimesChanged);
     }
 
-    // SELECTOR DE CHARANGA (OTRA)
-    document.querySelectorAll('input[name="charanga"]').forEach(radio => {
-      radio.addEventListener('change', () => {
-        const otherContainer = document.getElementById('charanga-other-container');
-        if (radio.value === 'Otra') {
-          otherContainer.classList.remove('hidden');
-          const otherInput = document.getElementById('bolo-charanga-other');
-          if (otherInput) otherInput.focus();
-        } else {
-          otherContainer.classList.add('hidden');
-        }
-      });
-    });
+    // Escritura manual de horas (sin usar inicio/fin) también sugiere el caché
+    const hoursInput = document.getElementById('bolo-hours');
+    if (hoursInput) {
+      hoursInput.addEventListener('input', updatePriceSuggestion);
+    }
 
     // SELECCIÓN DE MÚSICOS (Gestionada dinámicamente en renderMemberTags)
 
@@ -1447,6 +1487,18 @@
         delete state.charangaColors[originalName];
         state.charangaColors[newName] = editCharangaColorIndex;
 
+        const gasRateInput = document.getElementById('edit-charanga-gas-rate');
+        const hourlyRateInput = document.getElementById('edit-charanga-hourly-rate');
+        const newGasRate = gasRateInput ? parseFloat(gasRateInput.value) : NaN;
+        const newHourlyRate = hourlyRateInput ? parseFloat(hourlyRateInput.value) : NaN;
+
+        delete state.charangaGasRates[originalName];
+        delete state.charangaHourlyRates[originalName];
+        state.charangaGasRates[newName] = !isNaN(newGasRate) && newGasRate >= 0 ? newGasRate : state.gasRate;
+        if (!isNaN(newHourlyRate) && newHourlyRate >= 0) {
+          state.charangaHourlyRates[newName] = newHourlyRate;
+        }
+
         if (newName !== originalName) {
           // Actualizar también los bolos ya creados con el nombre antiguo del grupo
           state.bolos.forEach(b => {
@@ -1512,17 +1564,6 @@
 
     const btnDeleteBolo = document.getElementById('btn-delete-bolo');
     if (btnDeleteBolo) btnDeleteBolo.addEventListener('click', handleDeleteBolo);
-
-    // AJUSTES
-    document.getElementById('gas-rate-input').addEventListener('change', (e) => {
-      const val = parseFloat(e.target.value);
-      if (!isNaN(val) && val >= 0) {
-        state.gasRate = val;
-        saveDataToStorage();
-        updateGasRateDisplays();
-        renderAll();
-      }
-    });
 
     const btnExportData = document.getElementById('btn-export-data');
     if (btnExportData) btnExportData.addEventListener('click', exportBackup);
@@ -1615,10 +1656,37 @@
   window.handleSetStatus = handleSetStatus;
 
   // === CÁLCULO DE GASOLINA EN MODAL ===
+  function getSelectedCharangaInForm() {
+    const checked = document.querySelector('input[name="charanga"]:checked');
+    if (!checked || checked.value === 'Otra') return null;
+    return checked.value;
+  }
+
+  function updateGasRateLabel() {
+    const rate = getCharangaGasRate(getSelectedCharangaInForm());
+    const gasDisplay = document.getElementById('gas-rate-display');
+    if (gasDisplay) gasDisplay.textContent = rate.toFixed(2).replace('.', ',');
+  }
+
   function updateGasCalc() {
     const km = parseFloat(document.getElementById('bolo-km').value) || 0;
-    const total = km * state.gasRate;
-    document.getElementById('bolo-gas-calc').textContent = formatCurrency(total);
+    const rate = getCharangaGasRate(getSelectedCharangaInForm());
+    const gasCalcInput = document.getElementById('bolo-gas-calc');
+    if (gasCalcInput) gasCalcInput.value = (km * rate).toFixed(2);
+    updateGasRateLabel();
+  }
+
+  // Sugiere el caché según horas × precio/hora configurado para el grupo elegido.
+  // Solo autorrellena si el grupo tiene una tarifa configurada; si no, deja el
+  // campo intacto para no borrar un importe escrito a mano.
+  function updatePriceSuggestion() {
+    const hourlyRate = getCharangaHourlyRate(getSelectedCharangaInForm());
+    if (!hourlyRate) return;
+    const hoursEl = document.getElementById('bolo-hours');
+    const hours = hoursEl ? (parseFloat(hoursEl.value) || 0) : 0;
+    if (hours <= 0) return;
+    const priceInput = document.getElementById('bolo-price');
+    if (priceInput) priceInput.value = (hourlyRate * hours).toFixed(2);
   }
 
   // === CÁLCULO AUTOMÁTICO DE HORAS (INICIO -> FIN) ===
@@ -1807,7 +1875,11 @@
       document.getElementById('bolo-has-car').checked = hasCar;
       document.getElementById('car-details-fields').classList.toggle('hidden', !hasCar);
       document.getElementById('bolo-km').value = bolo.km || '';
-      updateGasCalc();
+      // Respetar el importe de gasolina ya guardado (pudo editarse a mano) en
+      // vez de recalcularlo desde cero al abrir el bolo para editarlo.
+      updateGasRateLabel();
+      const gasCalcInput = document.getElementById('bolo-gas-calc');
+      if (gasCalcInput) gasCalcInput.value = getBoloGasAmount(bolo).toFixed(2);
       calcHoursFromTimes();
 
     } else {
@@ -1891,6 +1963,8 @@
       const instrument = '';
       const hasCar = document.getElementById('bolo-has-car').checked;
       const km = hasCar ? (parseFloat(document.getElementById('bolo-km').value) || 0) : 0;
+      const gasCalcInput = document.getElementById('bolo-gas-calc');
+      const gasAmount = hasCar ? (parseFloat(gasCalcInput ? gasCalcInput.value : '') || 0) : 0;
       const notes = document.getElementById('bolo-notes').value.trim();
 
       if (id) {
@@ -1899,14 +1973,14 @@
         if (index !== -1) {
           state.bolos[index] = {
             ...state.bolos[index],
-            name, type, date, startTime, endTime, hours, time, price, status, charanga, instrument, hasCar, km, notes
+            name, type, date, startTime, endTime, hours, time, price, status, charanga, instrument, hasCar, km, gasAmount, notes
           };
         }
       } else {
         // Crear nuevo
         const newBolo = {
           id: Date.now().toString(),
-          name, type, date, startTime, endTime, hours, time, price, status, charanga, instrument, hasCar, km, notes
+          name, type, date, startTime, endTime, hours, time, price, status, charanga, instrument, hasCar, km, gasAmount, notes
         };
         state.bolos.push(newBolo);
       }
@@ -1947,7 +2021,7 @@
     const editBtn = document.getElementById('btn-edit-detail-bolo');
     if (!modal || !body) return;
 
-    const gasMoney = bolo.hasCar && bolo.km ? (parseFloat(bolo.km) * state.gasRate) : 0;
+    const gasMoney = getBoloGasAmount(bolo);
     const timeInfo = bolo.startTime ? `${bolo.startTime}${bolo.endTime ? ' a ' + bolo.endTime : ''} ${bolo.hours ? '(' + bolo.hours + 'h)' : ''}` : (bolo.time ? bolo.time + 'h' : '');
 
     let statusClass = 'pending';
@@ -2058,6 +2132,8 @@
       gasRate: state.gasRate,
       myCharangas: state.myCharangas,
       charangaColors: state.charangaColors,
+      charangaGasRates: state.charangaGasRates,
+      charangaHourlyRates: state.charangaHourlyRates,
       myMembers: state.myMembers,
       allInstruments: state.allInstruments,
       myInstruments: state.myInstruments,
@@ -2086,6 +2162,8 @@
           if (data.gasRate) state.gasRate = data.gasRate;
           if (Array.isArray(data.myCharangas)) state.myCharangas = data.myCharangas;
           if (data.charangaColors && typeof data.charangaColors === 'object') state.charangaColors = data.charangaColors;
+          if (data.charangaGasRates && typeof data.charangaGasRates === 'object') state.charangaGasRates = data.charangaGasRates;
+          if (data.charangaHourlyRates && typeof data.charangaHourlyRates === 'object') state.charangaHourlyRates = data.charangaHourlyRates;
           if (Array.isArray(data.myMembers)) state.myMembers = data.myMembers;
           if (Array.isArray(data.allInstruments)) state.allInstruments = data.allInstruments;
           if (Array.isArray(data.myInstruments)) state.myInstruments = data.myInstruments;
@@ -2604,6 +2682,14 @@
           state.charangaColors = { ...cloudData.charangaColors, ...state.charangaColors };
         }
 
+        if (cloudData.charangaGasRates && typeof cloudData.charangaGasRates === 'object') {
+          state.charangaGasRates = { ...cloudData.charangaGasRates, ...state.charangaGasRates };
+        }
+
+        if (cloudData.charangaHourlyRates && typeof cloudData.charangaHourlyRates === 'object') {
+          state.charangaHourlyRates = { ...cloudData.charangaHourlyRates, ...state.charangaHourlyRates };
+        }
+
         if (cloudData.gasRate) {
           state.gasRate = cloudData.gasRate;
         }
@@ -2612,6 +2698,8 @@
         localStorage.setItem('charanga_gasRate', state.gasRate.toString());
         localStorage.setItem('charanga_myCharangas', JSON.stringify(state.myCharangas));
         localStorage.setItem('charanga_charangaColors', JSON.stringify(state.charangaColors));
+        localStorage.setItem('charanga_charangaGasRates', JSON.stringify(state.charangaGasRates));
+        localStorage.setItem('charanga_charangaHourlyRates', JSON.stringify(state.charangaHourlyRates));
 
         renderAll();
       } else {
@@ -2644,6 +2732,8 @@
         bolos: bolosToSync,
         myCharangas: state.myCharangas,
         charangaColors: state.charangaColors,
+        charangaGasRates: state.charangaGasRates,
+        charangaHourlyRates: state.charangaHourlyRates,
         myInstruments: state.myInstruments,
         allInstruments: state.allInstruments,
         gasRate: state.gasRate,

@@ -1608,14 +1608,22 @@
       if (typeof e.preventDefault === 'function') e.preventDefault();
     }
     const bolo = state.bolos.find(b => b.id === id);
-    if (bolo && newStatus) {
-      bolo.status = newStatus;
-      saveDataToStorage();
-      if (cloudSync.user) {
-        syncToCloud();
+    if (!bolo || !newStatus) return;
+
+    if (newStatus === 'paid' && bolo.status !== 'paid') {
+      if (!confirm('¿Seguro que este bolo ya lo has cobrado?')) {
+        const menu = document.getElementById(`status-menu-${id}`);
+        if (menu) menu.classList.add('hidden');
+        return;
       }
-      renderAll();
     }
+
+    bolo.status = newStatus;
+    saveDataToStorage();
+    if (cloudSync.user) {
+      syncToCloud();
+    }
+    renderAll();
   }
 
   window.handleOpenStatusMenu = handleOpenStatusMenu;

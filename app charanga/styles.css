@@ -1026,7 +1026,7 @@ body {
   min-height: 68px;
   height: 68px;
   max-height: 68px;
-  padding: 3px 4px;
+  padding: 3px 2px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1084,14 +1084,16 @@ body {
 }
 
 /* ETIQUETAS DE BOLO EN CALENDARIO (COMPACTAS: 3 POR DÍA) */
+/* Fuente deliberadamente pequeña y sin recorte: la hora ("HH:MM") tiene que
+   verse siempre completa, nunca abreviada con puntos suspensivos. */
 .cal-event-tag {
-  font-size: 9px;
+  font-size: 7.5px;
   font-weight: 700;
-  padding: 1px 3px;
+  letter-spacing: -0.2px;
+  padding: 1px 1px;
   border-radius: 3px;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
   cursor: pointer;
   transition: transform 0.1s ease, filter 0.1s ease;
   line-height: 1.15;

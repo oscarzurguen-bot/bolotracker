@@ -309,35 +309,85 @@
     return `background-color:${c.bg};color:${c.text};border-color:${c.border};`;
   }
 
-  function cycleCharangaColor(name) {
-    if (!name) return;
-    const current = getCharangaColorIndex(name);
-    state.charangaColors[name] = (current + 1) % CHARANGA_COLOR_PALETTE.length;
-    saveDataToStorage();
-    renderAll();
+  function suggestNextCharangaColorIndex() {
+    const usedIndices = Object.values(state.charangaColors || {});
+    for (let i = 0; i < CHARANGA_COLOR_PALETTE.length; i++) {
+      if (!usedIndices.includes(i)) return i;
+    }
+    return usedIndices.length % CHARANGA_COLOR_PALETTE.length;
   }
-  window.cycleCharangaColor = cycleCharangaColor;
+
+  function renderColorPickerButton(btnEl, index) {
+    if (!btnEl) return;
+    btnEl.style.backgroundColor = CHARANGA_COLOR_PALETTE[index].text;
+  }
+
+  function renderColorPickerMenu(menuEl, selectedIndex, onSelect) {
+    menuEl.innerHTML = CHARANGA_COLOR_PALETTE.map((c, idx) => `
+      <button type="button" class="color-swatch-option ${idx === selectedIndex ? 'selected' : ''}" data-idx="${idx}" style="background-color:${c.text};" title="Elegir este color"></button>
+    `).join('');
+    menuEl.querySelectorAll('.color-swatch-option').forEach(optBtn => {
+      optBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onSelect(parseInt(optBtn.getAttribute('data-idx'), 10));
+        menuEl.classList.add('hidden');
+      });
+    });
+  }
+
+  // Índice de color elegido en el selector de "nuevo grupo" (Ajustes), antes de pulsar Añadir
+  let newCharangaColorIndex = 0;
+  // Índice de color elegido en el modal de "editar grupo", antes de pulsar Guardar
+  let editCharangaColorIndex = 0;
 
   function renderCharangasSettings() {
     const container = document.getElementById('settings-charangas-list');
     if (!container) return;
 
     container.innerHTML = state.myCharangas.map(ch => `
-      <span class="tag-chip">
-        <span class="charanga-color-dot" style="background-color:${getCharangaColor(ch).text};" title="Cambiar color" onclick="cycleCharangaColor('${escapeHtml(ch)}')"></span>
+      <span class="tag-chip btn-edit-charanga" data-charanga="${escapeHtml(ch)}" style="cursor: pointer;" title="Editar grupo">
+        <span class="charanga-color-dot-static" style="background-color:${getCharangaColor(ch).text};"></span>
         🎶 ${escapeHtml(ch)}
-        <button type="button" class="tag-remove btn-del-charanga" data-charanga="${escapeHtml(ch)}">&times;</button>
+        <button type="button" class="tag-remove btn-del-charanga" data-charanga="${escapeHtml(ch)}" title="Eliminar grupo">&times;</button>
       </span>
     `).join('');
 
     container.querySelectorAll('.btn-del-charanga').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const name = btn.getAttribute('data-charanga');
         state.myCharangas = state.myCharangas.filter(c => c !== name);
+        delete state.charangaColors[name];
         saveDataToStorage();
         renderAll();
       });
     });
+
+    container.querySelectorAll('.btn-edit-charanga').forEach(chip => {
+      chip.addEventListener('click', () => {
+        openEditCharangaModal(chip.getAttribute('data-charanga'));
+      });
+    });
+
+    // Preparar el color sugerido por defecto para el próximo grupo a añadir
+    newCharangaColorIndex = suggestNextCharangaColorIndex();
+    renderColorPickerButton(document.getElementById('btn-new-charanga-color'), newCharangaColorIndex);
+  }
+
+  function openEditCharangaModal(name) {
+    const modal = document.getElementById('modal-edit-charanga');
+    const nameInput = document.getElementById('edit-charanga-name');
+    const originalInput = document.getElementById('edit-charanga-original-name');
+    const swatchBtn = document.getElementById('btn-edit-charanga-color');
+    if (!modal || !nameInput || !originalInput || !swatchBtn) return;
+
+    originalInput.value = name;
+    nameInput.value = name;
+    editCharangaColorIndex = getCharangaColorIndex(name);
+    renderColorPickerButton(swatchBtn, editCharangaColorIndex);
+
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
   }
 
   function renderCharangaRadios() {
@@ -1309,11 +1359,89 @@
         const val = input ? input.value.trim() : '';
         if (val && !state.myCharangas.includes(val)) {
           state.myCharangas.push(val);
-          getCharangaColorIndex(val); // asigna color de la paleta desde el primer momento
+          state.charangaColors[val] = newCharangaColorIndex;
           input.value = '';
           saveDataToStorage();
-          renderAll();
+          renderAll(); // recalcula el siguiente color sugerido para el próximo grupo
         }
+      });
+    }
+
+    // SELECTOR DE COLOR: NUEVO GRUPO
+    const newColorSwatchBtn = document.getElementById('btn-new-charanga-color');
+    const newColorMenu = document.getElementById('new-charanga-color-menu');
+    if (newColorSwatchBtn && newColorMenu) {
+      newColorSwatchBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = newColorMenu.classList.contains('hidden');
+        document.querySelectorAll('.color-picker-menu').forEach(m => m.classList.add('hidden'));
+        if (isHidden) {
+          renderColorPickerMenu(newColorMenu, newCharangaColorIndex, (idx) => {
+            newCharangaColorIndex = idx;
+            renderColorPickerButton(newColorSwatchBtn, idx);
+          });
+          newColorMenu.classList.remove('hidden');
+        }
+      });
+    }
+
+    // SELECTOR DE COLOR: EDITAR GRUPO
+    const editColorSwatchBtn = document.getElementById('btn-edit-charanga-color');
+    const editColorMenu = document.getElementById('edit-charanga-color-menu');
+    if (editColorSwatchBtn && editColorMenu) {
+      editColorSwatchBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = editColorMenu.classList.contains('hidden');
+        document.querySelectorAll('.color-picker-menu').forEach(m => m.classList.add('hidden'));
+        if (isHidden) {
+          renderColorPickerMenu(editColorMenu, editCharangaColorIndex, (idx) => {
+            editCharangaColorIndex = idx;
+            renderColorPickerButton(editColorSwatchBtn, idx);
+          });
+          editColorMenu.classList.remove('hidden');
+        }
+      });
+    }
+
+    // GUARDAR CAMBIOS DE NOMBRE/COLOR DE UN GRUPO EXISTENTE
+    const btnSaveEditCharanga = document.getElementById('btn-save-edit-charanga');
+    if (btnSaveEditCharanga) {
+      btnSaveEditCharanga.addEventListener('click', () => {
+        const originalName = document.getElementById('edit-charanga-original-name').value;
+        const nameInput = document.getElementById('edit-charanga-name');
+        const newName = nameInput ? nameInput.value.trim() : '';
+
+        if (!newName) {
+          alert('Escribe un nombre para el grupo.');
+          if (nameInput) nameInput.focus();
+          return;
+        }
+        if (newName !== originalName && state.myCharangas.includes(newName)) {
+          alert('Ya existe un grupo con ese nombre.');
+          return;
+        }
+
+        const idx = state.myCharangas.indexOf(originalName);
+        if (idx !== -1) {
+          state.myCharangas[idx] = newName;
+        }
+
+        delete state.charangaColors[originalName];
+        state.charangaColors[newName] = editCharangaColorIndex;
+
+        if (newName !== originalName) {
+          // Actualizar también los bolos ya creados con el nombre antiguo del grupo
+          state.bolos.forEach(b => {
+            if (b.charanga === originalName) b.charanga = newName;
+          });
+          if (state.currentFilter === originalName) {
+            state.currentFilter = newName;
+          }
+        }
+
+        saveDataToStorage();
+        renderAll();
+        closeModal('modal-edit-charanga');
       });
     }
 
@@ -1321,6 +1449,10 @@
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.status-dropdown-wrapper')) {
         document.querySelectorAll('.status-dropdown-menu').forEach(m => m.classList.add('hidden'));
+      }
+
+      if (!e.target.closest('.color-picker-wrapper')) {
+        document.querySelectorAll('.color-picker-menu').forEach(m => m.classList.add('hidden'));
       }
 
       const closeBtn = e.target.closest('[data-close]') || e.target.closest('.btn-close-modal');

@@ -15,7 +15,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="styles.css?v=13.13.0">
+  <link rel="stylesheet" href="styles.css?v=13.14.0">
 </head>
 <body>
   <div class="app-container">
@@ -340,6 +340,10 @@
               <!-- Lista de charangas guardadas -->
             </div>
             <div class="member-input-row" style="margin-top: 8px;">
+              <div class="color-picker-wrapper" id="new-charanga-color-wrapper">
+                <button type="button" id="btn-new-charanga-color" class="color-picker-swatch" aria-label="Elegir color del grupo" title="Elegir color del grupo"></button>
+                <div id="new-charanga-color-menu" class="color-picker-menu hidden"></div>
+              </div>
               <input type="text" id="input-new-charanga" class="form-input" placeholder="Nombre de grupo...">
               <button type="button" id="btn-add-charanga" class="btn btn-secondary btn-sm">Añadir</button>
             </div>
@@ -564,6 +568,31 @@
       </div>
     </div>
 
+    <!-- MODAL: EDITAR GRUPO (NOMBRE Y COLOR) -->
+    <div id="modal-edit-charanga" class="modal-overlay hidden">
+      <div class="modal-content" style="max-width: 340px;">
+        <div class="modal-header">
+          <h3>✏️ Editar Grupo</h3>
+          <button type="button" class="btn-close-modal" data-close="modal-edit-charanga" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="edit-charanga-original-name">
+          <div class="form-group">
+            <label for="edit-charanga-name">Nombre del grupo</label>
+            <input type="text" id="edit-charanga-name" class="form-input" placeholder="Nombre de grupo...">
+          </div>
+          <div class="form-group">
+            <label>Color</label>
+            <div class="color-picker-wrapper" id="edit-charanga-color-wrapper">
+              <button type="button" id="btn-edit-charanga-color" class="color-picker-swatch" aria-label="Elegir color del grupo" title="Elegir color del grupo"></button>
+              <div id="edit-charanga-color-menu" class="color-picker-menu hidden"></div>
+            </div>
+          </div>
+          <button type="button" id="btn-save-edit-charanga" class="btn btn-primary btn-full" style="margin-top: 4px;">Guardar Cambios</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- SDKs oficiales de Firebase -->
@@ -574,7 +603,7 @@
   <!-- Google Identity Services: inicio de sesión sin popup ni redirección de página completa -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <script src="app.js?v=17.8.0"></script>
+  <script src="app.js?v=17.9.0"></script>
   <script>
     // En entorno local (localhost / 127.0.0.1 / file://), limpiar cache y Service Workers antiguos para ver cambios al instante
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' || !window.location.hostname) {

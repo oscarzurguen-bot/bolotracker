@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BoloTracker - Gestión de Bolos y Músicos</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#12131C">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <link rel="stylesheet" href="styles.css?v=13.6.0">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header principal -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-icon">
+          <img src="logo.png" alt="BoloTracker Logo" class="brand-logo-img">
+        </div>
+        <div>
+          <h1>BoloTracker</h1>
+          <p class="brand-subtitle">Gestión personal de bolos</p>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button type="button" id="btn-theme-toggle" class="btn btn-outline btn-icon-only" title="Cambiar Modo Claro/Oscuro" aria-label="Cambiar tema">
+          <span id="theme-toggle-icon">☀️</span>
+        </button>
+        <button type="button" id="btn-quick-add" class="btn btn-primary btn-icon-only" aria-label="Añadir">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Contenedor Principal de Vistas -->
+    <main class="main-content">
+
+      <!-- VISTA 1: BOLOS Y CALENDARIO -->
+      <section id="view-bolos" class="view-section active">
+        <div class="view-header">
+          <div class="view-title-group">
+            <h2>Bolos</h2>
+            <span class="badge badge-count" id="bolos-count">2</span>
+          </div>
+        </div>
+
+        <!-- PANELES DE RESUMEN: PENDIENTE DE COBRO Y GANANCIA ESTIMADA -->
+        <div class="summary-banners-grid">
+          <div class="summary-banner pending-banner">
+            <div class="banner-top">
+              <span class="banner-icon">⏳</span>
+              <div class="banner-text">
+                <span class="banner-label">Pendiente de Cobro</span>
+                <span class="banner-sub">Por cobrar</span>
+              </div>
+            </div>
+            <div class="banner-value" id="kpi-total-pending">270,00 €</div>
+          </div>
+
+          <div class="summary-banner estimated-banner">
+            <div class="banner-top">
+              <span class="banner-icon">📈</span>
+              <div class="banner-text">
+                <span class="banner-label">Ganancia Estimada</span>
+                <span class="banner-sub">Pendientes + Próximos</span>
+              </div>
+            </div>
+            <div class="banner-value" id="kpi-estimated-earnings">339,00 €</div>
+          </div>
+        </div>
+
+        <!-- Filtros de bolos -->
+        <div class="filter-chips">
+          <button class="chip-filter active" data-filter="upcoming">📅 Próximos</button>
+          <button class="chip-filter" data-filter="pending">⏳ Pendientes</button>
+          <button class="chip-filter" data-filter="paid">✅ Cobrados</button>
+          <button class="chip-filter" data-filter="car">🚗 Con coche</button>
+        </div>
+
+        <!-- Lista de Bolos -->
+        <div id="bolos-list" class="items-list">
+          <div class="item-card" data-bolo-id="sample-1">
+            <div class="item-top-row">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 class="item-title">📍 Villar del Río</h3>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=Villar%20del%20R%C3%ADo%2C%20Espa%C3%B1a" target="_blank" rel="noopener" class="btn-maps-subtle" title="Cómo llegar con Google Maps GPS" onclick="event.stopPropagation();">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-1px; opacity:0.85;"><rect x="4.5" y="4.5" width="15" height="15" rx="3" transform="rotate(45 12 12)"/><path d="M9.5 15v-3.5a1.5 1.5 0 0 1 1.5-1.5h3.5"/><polyline points="12.5 8 15 10 12.5 12"/></svg>
+                  Cómo llegar
+                </a>
+              </div>
+              <div class="status-dropdown-wrapper" onclick="event.stopPropagation();">
+                <button type="button" class="status-badge upcoming" onclick="event.stopPropagation(); handleOpenStatusMenu(event, 'sample-1')">📅 Próximo ▾</button>
+                <div id="status-menu-sample-1" class="status-dropdown-menu hidden" onclick="event.stopPropagation();">
+                  <button type="button" class="status-opt-item active" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-1', 'upcoming')">📅 Próximo</button>
+                  <button type="button" class="status-opt-item" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-1', 'pending')">⏳ Pendiente</button>
+                  <button type="button" class="status-opt-item" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-1', 'paid')">✅ Cobrado</button>
+                </div>
+              </div>
+            </div>
+            <div class="item-meta"><span>📅 Miércoles, 29/07/2026 (18:30 - 21:30)</span></div>
+            <div class="item-pills-row">
+              <span class="pill-info pill-charanga">🎶 Charanga La Movida</span>
+              <span class="pill-info">🎉 Pasacalles</span>
+              <span class="pill-info">⏱️ 3h</span>
+              <span class="pill-info pill-car">🚗 90 km (27,00 €)</span>
+            </div>
+            <div class="item-footer">
+              <div class="footer-prices-left"><span class="price-cache-white">120,00 €</span><span class="price-gas-blue">+27,00 €</span></div>
+              <span class="price-total-highlight upcoming">147,00 €</span>
+            </div>
+          </div>
+
+          <div class="item-card" data-bolo-id="sample-2">
+            <div class="item-top-row">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 class="item-title">📍 Béjar</h3>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=B%C3%A9jar%2C%20Espa%C3%B1a" target="_blank" rel="noopener" class="btn-maps-subtle" title="Cómo llegar con Google Maps GPS" onclick="event.stopPropagation();">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-1px; opacity:0.85;"><rect x="4.5" y="4.5" width="15" height="15" rx="3" transform="rotate(45 12 12)"/><path d="M9.5 15v-3.5a1.5 1.5 0 0 1 1.5-1.5h3.5"/><polyline points="12.5 8 15 10 12.5 12"/></svg>
+                  Cómo llegar
+                </a>
+              </div>
+              <div class="status-dropdown-wrapper" onclick="event.stopPropagation();">
+                <button type="button" class="status-badge pending" onclick="event.stopPropagation(); handleOpenStatusMenu(event, 'sample-2')">⏳ Pendiente ▾</button>
+                <div id="status-menu-sample-2" class="status-dropdown-menu hidden" onclick="event.stopPropagation();">
+                  <button type="button" class="status-opt-item" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-2', 'upcoming')">📅 Próximo</button>
+                  <button type="button" class="status-opt-item active" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-2', 'pending')">⏳ Pendiente</button>
+                  <button type="button" class="status-opt-item" onclick="event.stopPropagation(); handleSetStatus(event, 'sample-2', 'paid')">✅ Cobrado</button>
+                </div>
+              </div>
+            </div>
+            <div class="item-meta"><span>📅 Lunes, 10/08/2026 (17:00 - 20:00)</span></div>
+            <div class="item-pills-row">
+              <span class="pill-info pill-charanga">🎶 Charanga Los Rumberos</span>
+              <span class="pill-info">🎉 Procesión</span>
+              <span class="pill-info">⏱️ 3h</span>
+              <span class="pill-info pill-car">🚗 140 km (42,00 €)</span>
+            </div>
+            <div class="item-footer">
+              <div class="footer-prices-left"><span class="price-cache-white">150,00 €</span><span class="price-gas-blue">+42,00 €</span></div>
+              <span class="price-total-highlight pending">192,00 €</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 2: CALENDARIO ENTERO DE BOLOS -->
+      <section id="view-calendario" class="view-section">
+        <div class="view-header" style="margin-bottom: 12px;">
+          <div class="view-title-group" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <h2 id="calendar-month-title" style="font-family: var(--font-heading); font-size: 20px;">Julio 2026</h2>
+            <div class="calendar-nav-btns" style="display: flex; gap: 6px;">
+              <button type="button" id="btn-cal-prev" class="btn btn-outline btn-sm" onclick="handleCalendarNav('prev')" style="padding: 5px 10px;">◀</button>
+              <button type="button" id="btn-cal-today" class="btn btn-outline btn-sm" onclick="handleCalendarNav('today')" style="padding: 5px 10px;">Hoy</button>
+              <button type="button" id="btn-cal-next" class="btn btn-outline btn-sm" onclick="handleCalendarNav('next')" style="padding: 5px 10px;">▶</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="calendar-container">
+          <div class="calendar-weekdays-grid">
+            <div>Lun</div>
+            <div>Mar</div>
+            <div>Mié</div>
+            <div>Jue</div>
+            <div>Vie</div>
+            <div>Sáb</div>
+            <div>Dom</div>
+          </div>
+          <div id="calendar-days-grid" class="calendar-days-grid">
+            <!-- Celdas renderizadas dinámicamente por JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 3: ESTADÍSTICAS -->
+      <section id="view-finanzas" class="view-section">
+        <div class="view-header" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <h2>Estadísticas</h2>
+          </div>
+
+          <!-- BARRA DE FILTROS AÑO Y MES -->
+          <div class="finances-filter-bar" style="display: flex; gap: 10px; width: 100%; margin-top: 4px;">
+            <div style="flex: 1;">
+              <label for="fin-filter-year" style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600;">📅 Año</label>
+              <select id="fin-filter-year" class="form-input" onchange="handleFinancesFilterChange()" style="padding: 6px 10px; font-size: 13px; border-radius: var(--radius-sm);">
+                <option value="all">Todos los años</option>
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <label for="fin-filter-month" style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600;">📆 Mes</label>
+              <select id="fin-filter-month" class="form-input" onchange="handleFinancesFilterChange()" style="padding: 6px 10px; font-size: 13px; border-radius: var(--radius-sm);">
+                <option value="all">Todos los meses</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+            </div>
+          </div>
+          <div id="fin-filter-summary" style="font-size: 12px; color: var(--primary-gold); font-weight: 600; margin-top: 4px;">
+            📊 Mostrando: Todos los bolos
+          </div>
+        </div>
+
+        <!-- PANEL 1: CACHÉ Y GANANCIAS MUSICALES -->
+        <div class="finance-overview-card">
+          <h3>💰 Balances de Caché</h3>
+          <div class="finance-row">
+            <span>Bolos Cobrados:</span>
+            <strong id="fin-paid-total" class="text-success">0,00 €</strong>
+          </div>
+          <div class="finance-row">
+            <span>Bolos Pendientes:</span>
+            <strong id="fin-pending-total" class="text-warning">0,00 €</strong>
+          </div>
+          <div class="finance-divider"></div>
+          <div class="finance-row total-highlight">
+            <span>TOTAL CACHÉ GANADO:</span>
+            <strong id="fin-grand-total">0,00 €</strong>
+          </div>
+        </div>
+
+        <!-- PANEL 2 INDEPENDIENTE: KILÓMETROS Y DESPLAZAMIENTOS -->
+        <div class="finance-overview-card" style="margin-top: 16px;">
+          <h3>🚗 Desplazamientos</h3>
+          <div class="finance-row">
+            <span>Total Kilómetros recorridos:</span>
+            <strong id="fin-total-km" style="color: #60A5FA;">0 km</strong>
+          </div>
+          <div class="finance-row">
+            <span>Nº de pueblos visitados:</span>
+            <strong id="fin-towns-count" style="color: var(--primary-gold);">0 pueblos</strong>
+          </div>
+        </div>
+
+        <div class="chart-box" style="margin-top: 16px; margin-bottom: 16px;">
+          <h3>Estadísticas por Grupo / Charanga</h3>
+          <div id="charanga-stats" class="charanga-stats-grid">
+            <!-- Paneles individuales por charanga -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- VISTA 3: PASAPORTE DE PUEBLOS -->
+      <section id="view-pasaporte" class="view-section">
+        <div class="view-header">
+          <div class="view-title-group">
+            <h2>Pasaporte de Gira</h2>
+            <span class="badge badge-count" id="towns-count">0 pueblos</span>
+          </div>
+        </div>
+
+        <div class="passport-section">
+          <div class="passport-header">
+            <p class="passport-sub" style="font-size: 13px;">Toca cualquier pueblo para abrir su ficha rápida con las fechas y el dinero acumulado:</p>
+          </div>
+
+          <div id="passport-grid" class="passport-grid">
+            <!-- Sellos de pueblos generados dinámicamente -->
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 4: AJUSTES / DATOS -->
+      <section id="view-ajustes" class="view-section">
+        <div class="view-header">
+          <h2>Ajustes y Datos</h2>
+        </div>
+
+        <!-- CUENTA Y SINCRONIZACIÓN EN LA NUBE -->
+        <div class="settings-card cloud-sync-card">
+          <h3>☁️ Cuenta y Sincronización en Nube</h3>
+          <p class="settings-desc">Sincroniza automáticamente tus bolos, vehículos y cobros en la nube con tu cuenta de Google:</p>
+          
+          <div id="cloud-status-unauth" class="cloud-status-box">
+            <div class="cloud-info-row">
+              <span class="cloud-badge offline-badge">Dispositivo Local</span>
+              <span class="cloud-sub">Tus datos se guardan en este teléfono. Conéctate para tener copia de seguridad automática.</span>
+            </div>
+            <div id="gis-button-container" style="display: flex; justify-content: center; min-height: 44px;"></div>
+          </div>
+
+          <div id="cloud-status-auth" class="cloud-status-box hidden">
+            <div class="user-profile-row">
+              <img id="user-avatar" src="" alt="Avatar" class="user-avatar-img">
+              <div class="user-info">
+                <strong id="user-display-name">Músico</strong>
+                <span id="user-email">email@google.com</span>
+                <span class="cloud-badge online-badge">🟢 Conectado</span>
+                <span id="cloud-last-sync" class="cloud-sub" style="display:block; margin-top:4px;"></span>
+              </div>
+            </div>
+            <div class="cloud-actions-row">
+              <button type="button" id="btn-manual-sync" class="btn btn-outline btn-sm" onclick="handleManualSync()">
+                🔄 Sincronizar Ahora
+              </button>
+              <button type="button" id="btn-google-logout" class="btn btn-danger-outline btn-sm" onclick="handleGoogleLogout()">
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
+
+          <div id="cloud-debug-info" style="margin-top: 12px; padding: 10px; font-size: 12px; line-height: 1.6; font-family: monospace; color: #ffb400; background: rgba(255,180,0,0.08); border: 1px solid rgba(255,180,0,0.4); border-radius: 8px; white-space: pre-wrap; word-break: break-word;"></div>
+        </div>
+
+        <!-- TARIFA DE GASOLINA (PANEL INDEPENDIENTE) -->
+        <div class="settings-card">
+          <h3>⛽ Tarifa de Gasolina</h3>
+          <p class="settings-desc">Establece el precio a cobrar por kilómetro cuando utilices tu vehículo en los bolos:</p>
+          <div class="setting-row" style="margin-top: 6px;">
+            <label for="gas-rate-input" style="font-weight: 500; font-size: 14px;">Precio por Kilómetro (€/km):</label>
+            <input type="number" id="gas-rate-input" value="0.30" step="0.05" min="0" class="form-input short-input" style="max-width: 100px; text-align: center; font-weight: 700; color: var(--primary-gold);">
+          </div>
+        </div>
+
+        <!-- GESTIÓN DE MIS GRUPOS -->
+        <div class="settings-card">
+          <h3>🎶 Mis Grupos</h3>
+          <p class="settings-desc">Gestiona el listado de grupos con los que sueles tocar:</p>
+          <div class="settings-actions">
+            <div id="settings-charangas-list" class="tags-container">
+              <!-- Lista de charangas guardadas -->
+            </div>
+            <div class="member-input-row" style="margin-top: 8px;">
+              <input type="text" id="input-new-charanga" class="form-input" placeholder="Nombre de grupo...">
+              <button type="button" id="btn-add-charanga" class="btn btn-secondary btn-sm">Añadir</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- GESTIÓN DE DATOS (AL FINAL) -->
+        <div class="settings-card">
+          <h3>Gestión de Datos</h3>
+          <p class="settings-desc">Tus datos se guardan automáticamente en tu dispositivo y en la nube al sincronizar con Google.</p>
+          <div class="settings-actions">
+            <button id="btn-clear-all" class="btn btn-danger-outline btn-full" onclick="clearAllData()">
+              🗑️ Borrar Todos los Datos
+            </button>
+          </div>
+        </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- NAVEGACIÓN INFERIOR (BARRA FIJA) -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-target="view-bolos">
+        <div class="nav-icon">📋</div>
+        <span>Bolos</span>
+      </button>
+      <button class="nav-item" data-target="view-calendario">
+        <div class="nav-icon">📅</div>
+        <span>Calendario</span>
+      </button>
+      <button class="nav-item" data-target="view-pasaporte">
+        <div class="nav-icon">🛂</div>
+        <span>Pasaporte</span>
+      </button>
+      <button class="nav-item" data-target="view-finanzas">
+        <div class="nav-icon">📊</div>
+        <span>Estadísticas</span>
+      </button>
+      <button class="nav-item" data-target="view-ajustes">
+        <div class="nav-icon">⚙️</div>
+        <span>Ajustes</span>
+      </button>
+    </nav>
+
+    <!-- MODAL 1: AÑADIR / EDITAR BOLO -->
+    <div id="modal-bolo" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-bolo-title">Nuevo Bolo</h3>
+          <button type="button" class="btn-close-modal" data-close="modal-bolo" aria-label="Cerrar">&times;</button>
+        </div>
+        <form id="form-bolo" class="modal-body">
+          <input type="hidden" id="bolo-id">
+
+          <!-- SECCIÓN SELECCIÓN DE GRUPO -->
+          <div class="form-group">
+            <label>Grupo *</label>
+            <div id="charanga-radio-group" class="charanga-selector">
+              <!-- Renderizado dinámico desde state.myCharangas -->
+            </div>
+            <div id="charanga-other-container" class="form-group hidden" style="margin-top: 8px;">
+              <input type="text" id="bolo-charanga-other" class="form-input" placeholder="Escribe el nombre del otro grupo...">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bolo-name">Pueblo *</label>
+            <input type="text" id="bolo-name" class="form-input" placeholder="Ej: Villar del Río" required>
+          </div>
+
+          <div class="form-group">
+            <label for="bolo-type">Tipo de bolo</label>
+            <input type="text" id="bolo-type" class="form-input" placeholder="Ej: Pasacalles, Vermú, Diana, Procesión...">
+          </div>
+
+          <div class="form-group">
+            <label for="bolo-date">Fecha *</label>
+            <input type="date" id="bolo-date" class="form-input" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bolo-start-time">Hora Inicio</label>
+              <select id="bolo-start-time" class="form-select">
+                <option value="">--:--</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="bolo-end-time">Hora Fin</label>
+              <select id="bolo-end-time" class="form-select">
+                <option value="">--:--</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bolo-hours">Número de horas</label>
+              <input type="number" id="bolo-hours" class="form-input" min="0.5" step="0.5" placeholder="Ej: 2">
+            </div>
+            <div class="form-group">
+              <label for="bolo-price">Caché / Importe (€)</label>
+              <input type="number" id="bolo-price" class="form-input" placeholder="0.00" step="5" min="0">
+            </div>
+          </div>
+
+
+
+          <div class="form-group">
+            <label for="bolo-status">Estado del Bolo</label>
+            <select id="bolo-status" class="form-select">
+              <option value="upcoming">📅 Próximo (Por realizar)</option>
+              <option value="pending">⏳ Pendiente de cobrar</option>
+              <option value="paid">✅ Cobrado</option>
+            </select>
+          </div>
+
+          <!-- SECCIÓN DESPLAZAMIENTO Y COCHE -->
+          <div class="form-card-box">
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-title">🚗 ¿Llevé coche propio?</span>
+                <span class="toggle-sub">Calcula el importe de gasolina a devolver</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="bolo-has-car">
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div id="car-details-fields" class="car-details-container hidden">
+              <div class="form-group">
+                <label for="bolo-km">Kilómetros recorridos (Ida y vuelta)</label>
+                <div class="input-with-suffix">
+                  <input type="number" id="bolo-km" class="form-input" placeholder="0" min="0" step="1">
+                  <span class="suffix">km</span>
+                </div>
+              </div>
+              <div class="gas-calc-badge">
+                <span>Total Gasolina (<span id="gas-rate-display">0,30</span> €/km):</span>
+                <strong id="bolo-gas-calc">0,00 €</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bolo-notes">Notas / Observaciones</label>
+            <textarea id="bolo-notes" class="form-textarea" rows="2" placeholder="Uniforme, vestimenta, repertorio o notas extra..."></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" id="btn-delete-bolo" class="btn btn-danger hidden">Eliminar Bolo</button>
+            <button type="submit" id="btn-save-bolo" class="btn btn-primary btn-full">Guardar Bolo</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 3: DETALLE COMPLETO DEL BOLO -->
+    <div id="modal-bolo-detail" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="detail-title">Detalles del Bolo</h3>
+          <button type="button" class="btn-close-modal" data-close="modal-bolo-detail" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body" id="detail-body">
+          <!-- Detalle dinámico cargado por JS -->
+        </div>
+        <div class="modal-footer-actions" style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border-color);">
+          <button id="btn-edit-detail-bolo" class="btn btn-outline" style="flex: 1; padding: 12px; font-size: 14px; font-weight: 700;">✏️ Editar Bolo</button>
+          <button id="btn-delete-detail-bolo" class="btn btn-danger-outline" style="width: 44px; height: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; border-radius: var(--radius-md);" title="Eliminar Bolo">🗑️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: FICHA COMPLETA DEL PUEBLO -->
+    <div id="modal-town-detail" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-town-title">📍 Ficha del Pueblo</h3>
+          <button type="button" class="btn-close-modal" data-close="modal-town-detail" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-town-body">
+          <!-- Detalle dinámico del pueblo -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 5: INICIAR SESIÓN CON GOOGLE -->
+    <div id="modal-google-login" class="modal-overlay hidden">
+      <div class="modal-content" style="max-width: 380px;">
+        <div class="modal-header">
+          <h3 style="display: flex; align-items: center; gap: 8px; font-size: 16px;">
+            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            Cuenta de Google
+          </h3>
+          <button type="button" class="btn-close-modal" data-close="modal-google-login" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 16px;">
+          <p id="google-login-error-text" style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">
+            No se pudo iniciar sesión con Google. Comprueba tu conexión a internet e inténtalo de nuevo.
+          </p>
+          <p style="font-size: 12px; color: var(--text-muted); opacity: 0.8;">
+            Cierra este aviso e inténtalo de nuevo con el botón de Google en Ajustes.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SDKs oficiales de Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore-compat.js"></script>
+
+  <!-- Google Identity Services: inicio de sesión sin popup ni redirección de página completa -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <script src="app.js?v=17.4.0"></script>
+  <script>
+    // En entorno local (localhost / 127.0.0.1 / file://), limpiar cache y Service Workers antiguos para ver cambios al instante
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' || !window.location.hostname) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          for (let reg of regs) reg.unregister();
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          for (let name of names) caches.delete(name);
+        });
+      }
+    } else {
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+            reg.update();
+          });
+        });
+      }
+    }
+  </script>
+</body>
+</html>

@@ -925,6 +925,8 @@ body {
   /* El color real (fondo/texto/borde) lo fija charangaColorStyle() en línea,
      según el grupo al que pertenece este recuento. */
   border: 1px solid transparent;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .charanga-panel-body {

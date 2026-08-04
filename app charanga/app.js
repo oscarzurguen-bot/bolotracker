@@ -890,11 +890,13 @@
             if (b.status === 'paid') {
               paidCount++;
               paidMoney += total;
-            } else {
+            } else if (b.status === 'pending') {
               pendingCount++;
               pendingMoney += total;
             }
           });
+
+          const activeCount = paidCount + pendingCount;
 
           return `
             <div class="charanga-panel-card">
@@ -902,7 +904,7 @@
                 <div class="charanga-panel-title">
                   <span>🎶</span> <span>${escapeHtml(chName)}</span>
                 </div>
-                <span class="charanga-badge-count" style="${charangaColorStyle(chName)}">${totalCount} ${totalCount === 1 ? 'bolo' : 'bolos'}</span>
+                <span class="charanga-badge-count" style="${charangaColorStyle(chName)}">${activeCount} ${activeCount === 1 ? 'bolo' : 'bolos'}</span>
               </div>
               
               <div class="charanga-panel-body">

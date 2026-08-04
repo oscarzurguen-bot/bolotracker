@@ -2220,7 +2220,8 @@
 
   // === HELPERS DE FORMATO Y UTILIDADES ===
   function formatCurrency(val) {
-    return val.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+    const roundVal = Math.round(val || 0);
+    return roundVal.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, minimumFractionDigits: 0 });
   }
 
   function formatDateStr(dateStr) {

@@ -922,15 +922,9 @@ body {
   font-weight: 700;
   padding: 3px 9px;
   border-radius: 12px;
-  background-color: rgba(168, 85, 247, 0.15);
-  color: #C084FC;
-  border: 1px solid rgba(168, 85, 247, 0.3);
-}
-
-[data-theme="light"] .charanga-badge-count {
-  background-color: #F3E8FF;
-  color: #7E22CE;
-  border-color: #E9D5FF;
+  /* El color real (fondo/texto/borde) lo fija charangaColorStyle() en línea,
+     según el grupo al que pertenece este recuento. */
+  border: 1px solid transparent;
 }
 
 .charanga-panel-body {

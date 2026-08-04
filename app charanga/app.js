@@ -278,16 +278,22 @@
   }
 
   // === COLORES POR GRUPO (CHARANGA) ===
-  // Paleta deliberadamente distinta a los colores que ya usa la app en otras
-  // partes: dorado/ámbar (marca y estado "pendiente"), azul (estado "próximo"),
-  // verde (estado "cobrado"), rojo (peligro/eliminar), cian (coche/gasolina) y
-  // morado (antiguo color fijo de "grupo", ahora sustituido por esta paleta).
+  // Paleta ampliada a petición del usuario. "Rojo" y "amarillo claro" caen
+  // cerca del rojo de peligro y del dorado de marca por definición (son esos
+  // colores), el resto se mantiene distinto del resto de la app: azul de
+  // "próximo", verde de "cobrado", cian de coche/gasolina. El "morado oscuro"
+  // sustituye al antiguo índigo en el mismo puesto de la paleta (los grupos
+  // que ya lo tenían asignado pasan a este color automáticamente).
   const CHARANGA_COLOR_PALETTE = [
-    { text: '#F472B6', bg: 'rgba(236, 72, 153, 0.15)', border: 'rgba(236, 72, 153, 0.35)' },  // rosa
-    { text: '#A3E635', bg: 'rgba(132, 204, 22, 0.15)', border: 'rgba(132, 204, 22, 0.35)' },   // lima
-    { text: '#818CF8', bg: 'rgba(99, 102, 241, 0.15)', border: 'rgba(99, 102, 241, 0.35)' },   // índigo
-    { text: '#E879F9', bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.35)' },   // fucsia
-    { text: '#94A3B8', bg: 'rgba(100, 116, 139, 0.15)', border: 'rgba(100, 116, 139, 0.35)' }  // pizarra
+    { text: '#F472B6', rgb: '236, 72, 153' },   // rosa
+    { text: '#A3E635', rgb: '132, 204, 22' },   // lima
+    { text: '#9333EA', rgb: '147, 51, 234' },   // morado oscuro
+    { text: '#E879F9', rgb: '217, 70, 239' },   // fucsia
+    { text: '#94A3B8', rgb: '100, 116, 139' },  // pizarra
+    { text: '#F87171', rgb: '248, 113, 113' },  // rojo
+    { text: '#FDE047', rgb: '253, 224, 71' },   // amarillo claro
+    { text: '#BE123C', rgb: '190, 18, 60' },    // granate
+    { text: '#7DD3FC', rgb: '125, 211, 252' }   // azul claro
   ];
 
   function getCharangaColorIndex(name) {
@@ -304,9 +310,16 @@
     return CHARANGA_COLOR_PALETTE[getCharangaColorIndex(name)];
   }
 
-  function charangaColorStyle(name) {
+  // strong=true da una versión de fondo más intensa (para marcar la tarjeta
+  // seleccionada del selector de grupo, donde el color de fondo es el propio
+  // indicador de selección en vez del habitual borde dorado).
+  function charangaColorStyle(name, strong = false) {
     const c = getCharangaColor(name);
-    return `background-color:${c.bg};color:${c.text};border-color:${c.border};`;
+    const bgAlpha = strong ? 0.35 : 0.15;
+    const borderAlpha = strong ? 0.9 : 0.35;
+    let style = `background-color:rgba(${c.rgb},${bgAlpha});color:${c.text};border-color:rgba(${c.rgb},${borderAlpha});`;
+    if (strong) style += `box-shadow:0 0 0 1px rgba(${c.rgb},0.5);`;
+    return style;
   }
 
   function suggestNextCharangaColorIndex() {
@@ -398,12 +411,13 @@
 
     let html = state.myCharangas.map((ch, idx) => {
       const isChecked = currentSelected === ch || (idx === 0 && !state.myCharangas.includes(currentSelected) && currentSelected !== 'Otra');
+      const labelColor = getCharangaColor(ch).text;
       return `
         <label class="radio-card">
           <input type="radio" name="charanga" value="${escapeHtml(ch)}" ${isChecked ? 'checked' : ''}>
-          <div class="radio-content">
+          <div class="radio-content" style="${charangaColorStyle(ch, isChecked)}">
             <span class="radio-icon">🎶</span>
-            <span class="radio-label">${escapeHtml(ch)}</span>
+            <span class="radio-label" style="color:${labelColor};">${escapeHtml(ch)}</span>
           </div>
         </label>
       `;
@@ -431,7 +445,6 @@
         } else {
           if (otherContainer) otherContainer.classList.add('hidden');
         }
-        updatePriceCalculation(false);
       });
     });
   }
@@ -858,7 +871,7 @@
                 <div class="charanga-panel-title">
                   <span>🎶</span> <span>${escapeHtml(chName)}</span>
                 </div>
-                <span class="charanga-badge-count">${totalCount} ${totalCount === 1 ? 'bolo' : 'bolos'}</span>
+                <span class="charanga-badge-count" style="${charangaColorStyle(chName)}">${totalCount} ${totalCount === 1 ? 'bolo' : 'bolos'}</span>
               </div>
               
               <div class="charanga-panel-body">

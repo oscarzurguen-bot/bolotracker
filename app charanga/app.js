@@ -335,9 +335,9 @@
   // del km y la tarifa del grupo (compatibilidad con bolos guardados antes de
   // que este campo existiera como tal).
   function getBoloGasAmount(bolo) {
-    if (typeof bolo.gasAmount === 'number') return bolo.gasAmount;
+    if (typeof bolo.gasAmount === 'number') return Math.round(bolo.gasAmount);
     if (bolo.hasCar && bolo.km) {
-      return parseFloat(bolo.km) * getCharangaGasRate(bolo.charanga);
+      return Math.round(parseFloat(bolo.km) * getCharangaGasRate(bolo.charanga));
     }
     return 0;
   }
@@ -1648,7 +1648,7 @@
     const km = parseFloat(document.getElementById('bolo-km').value) || 0;
     const rate = getCharangaGasRate(getSelectedCharangaInForm());
     const gasCalcInput = document.getElementById('bolo-gas-calc');
-    if (gasCalcInput) gasCalcInput.value = (km * rate).toFixed(2);
+    if (gasCalcInput) gasCalcInput.value = Math.round(km * rate).toString();
     updateGasRateLabel();
   }
 
@@ -1927,7 +1927,7 @@
       const hasCar = document.getElementById('bolo-has-car').checked;
       const km = hasCar ? (parseFloat(document.getElementById('bolo-km').value) || 0) : 0;
       const gasCalcInput = document.getElementById('bolo-gas-calc');
-      const gasAmount = hasCar ? (parseFloat(gasCalcInput ? gasCalcInput.value : '') || 0) : 0;
+      const gasAmount = hasCar ? Math.round(parseFloat(gasCalcInput ? gasCalcInput.value : '') || 0) : 0;
       const notes = document.getElementById('bolo-notes').value.trim();
 
       if (id) {

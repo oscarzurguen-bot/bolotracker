@@ -20,6 +20,7 @@
     bolos: [],
     gasRate: 0.30,
     myCharangas: ['Charanga La Movida', 'Charanga Los Rumberos'],
+    charangaColors: {},
     allInstruments: ['Bombo', 'Caja', 'Trompeta', 'Saxofón', 'Trombón', 'Piano', 'Bombardino'],
     myInstruments: ['Bombo', 'Caja', 'Trompeta', 'Saxofón', 'Trombón', 'Piano', 'Bombardino'],
     myMembers: [
@@ -138,6 +139,7 @@
       const storedBolos = localStorage.getItem('charanga_bolos');
       const storedRate = localStorage.getItem('charanga_gasRate');
       const storedCharangas = localStorage.getItem('charanga_myCharangas');
+      const storedCharangaColors = localStorage.getItem('charanga_charangaColors');
       const storedMembers = localStorage.getItem('charanga_myMembers');
       const storedAllInstruments = localStorage.getItem('charanga_allInstruments');
       const storedMyInstruments = localStorage.getItem('charanga_myInstruments');
@@ -152,6 +154,9 @@
       }
       if (storedRate) state.gasRate = parseFloat(storedRate) || 0.30;
       if (storedCharangas) state.myCharangas = JSON.parse(storedCharangas);
+      if (storedCharangaColors) {
+        try { state.charangaColors = JSON.parse(storedCharangaColors); } catch (e) {}
+      }
       if (storedMembers) state.myMembers = JSON.parse(storedMembers);
       if (storedAllInstruments) state.allInstruments = JSON.parse(storedAllInstruments);
       if (storedMyInstruments) state.myInstruments = JSON.parse(storedMyInstruments);
@@ -193,6 +198,7 @@
     localStorage.setItem('charanga_bolos', JSON.stringify(state.bolos));
     localStorage.setItem('charanga_gasRate', state.gasRate.toString());
     localStorage.setItem('charanga_myCharangas', JSON.stringify(state.myCharangas));
+    localStorage.setItem('charanga_charangaColors', JSON.stringify(state.charangaColors));
     localStorage.setItem('charanga_myMembers', JSON.stringify(state.myMembers));
     localStorage.setItem('charanga_allInstruments', JSON.stringify(state.allInstruments));
     localStorage.setItem('charanga_myInstruments', JSON.stringify(state.myInstruments));
@@ -271,12 +277,54 @@
     });
   }
 
+  // === COLORES POR GRUPO (CHARANGA) ===
+  // Paleta deliberadamente distinta a los colores que ya usa la app en otras
+  // partes: dorado/ámbar (marca y estado "pendiente"), azul (estado "próximo"),
+  // verde (estado "cobrado"), rojo (peligro/eliminar), cian (coche/gasolina) y
+  // morado (antiguo color fijo de "grupo", ahora sustituido por esta paleta).
+  const CHARANGA_COLOR_PALETTE = [
+    { text: '#F472B6', bg: 'rgba(236, 72, 153, 0.15)', border: 'rgba(236, 72, 153, 0.35)' },  // rosa
+    { text: '#A3E635', bg: 'rgba(132, 204, 22, 0.15)', border: 'rgba(132, 204, 22, 0.35)' },   // lima
+    { text: '#818CF8', bg: 'rgba(99, 102, 241, 0.15)', border: 'rgba(99, 102, 241, 0.35)' },   // índigo
+    { text: '#E879F9', bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.35)' },   // fucsia
+    { text: '#94A3B8', bg: 'rgba(100, 116, 139, 0.15)', border: 'rgba(100, 116, 139, 0.35)' }  // pizarra
+  ];
+
+  function getCharangaColorIndex(name) {
+    if (!name) return 0;
+    if (!state.charangaColors) state.charangaColors = {};
+    if (typeof state.charangaColors[name] !== 'number') {
+      const usedCount = Object.keys(state.charangaColors).length;
+      state.charangaColors[name] = usedCount % CHARANGA_COLOR_PALETTE.length;
+    }
+    return state.charangaColors[name];
+  }
+
+  function getCharangaColor(name) {
+    return CHARANGA_COLOR_PALETTE[getCharangaColorIndex(name)];
+  }
+
+  function charangaColorStyle(name) {
+    const c = getCharangaColor(name);
+    return `background-color:${c.bg};color:${c.text};border-color:${c.border};`;
+  }
+
+  function cycleCharangaColor(name) {
+    if (!name) return;
+    const current = getCharangaColorIndex(name);
+    state.charangaColors[name] = (current + 1) % CHARANGA_COLOR_PALETTE.length;
+    saveDataToStorage();
+    renderAll();
+  }
+  window.cycleCharangaColor = cycleCharangaColor;
+
   function renderCharangasSettings() {
     const container = document.getElementById('settings-charangas-list');
     if (!container) return;
 
     container.innerHTML = state.myCharangas.map(ch => `
       <span class="tag-chip">
+        <span class="charanga-color-dot" style="background-color:${getCharangaColor(ch).text};" title="Cambiar color" onclick="cycleCharangaColor('${escapeHtml(ch)}')"></span>
         🎶 ${escapeHtml(ch)}
         <button type="button" class="tag-remove btn-del-charanga" data-charanga="${escapeHtml(ch)}">&times;</button>
       </span>
@@ -527,7 +575,7 @@
           </div>
 
           <div class="item-pills-row">
-            <span class="pill-info pill-charanga">🎶 ${escapeHtml(charangaName)}</span>
+            <span class="pill-info pill-charanga" style="${charangaColorStyle(charangaName)}">🎶 ${escapeHtml(charangaName)}</span>
             ${bolo.type ? `<span class="pill-info">🎉 ${escapeHtml(bolo.type)}</span>` : ''}
             ${bolo.hours ? `<span class="pill-info">⏱️ ${bolo.hours}h</span>` : ''}
             ${bolo.hasCar ? `<span class="pill-info pill-car">🚗 ${bolo.km} km</span>` : ''}
@@ -879,7 +927,7 @@
           </div>
 
           <div class="item-pills-row">
-            <span class="pill-info pill-charanga">🎶 ${escapeHtml(b.charanga || 'Charanga')}</span>
+            <span class="pill-info pill-charanga" style="${charangaColorStyle(b.charanga)}">🎶 ${escapeHtml(b.charanga || 'Charanga')}</span>
             ${b.hasCar ? `<span class="pill-info pill-car">🚗 ${b.km} km</span>` : ''}
           </div>
 
@@ -1005,16 +1053,12 @@
   }
 
   function renderCalEventTag(b) {
-    let tagClass = 'pending';
-    if (b.status === 'upcoming') tagClass = 'upcoming';
-    else if (b.status === 'paid') tagClass = 'paid';
-
     // Mostrar únicamente la hora de inicio del bolo (sin caer en horas/"Bolo" genérico)
     const timeStr = b.startTime || '';
     const fullInfo = `${b.type || b.name || 'Bolo'} (${b.charanga || 'Charanga'}) - ${b.startTime || ''}`;
 
     return `
-      <div class="cal-event-tag ${tagClass}" data-bolo-id="${b.id}" onclick="handleCalendarEventClick(event, '${b.id}')" title="${escapeHtml(fullInfo)}">
+      <div class="cal-event-tag" data-bolo-id="${b.id}" onclick="handleCalendarEventClick(event, '${b.id}')" title="${escapeHtml(fullInfo)}" style="${charangaColorStyle(b.charanga)}">
         ${escapeHtml(timeStr)}
       </div>
     `;
@@ -1265,6 +1309,7 @@
         const val = input ? input.value.trim() : '';
         if (val && !state.myCharangas.includes(val)) {
           state.myCharangas.push(val);
+          getCharangaColorIndex(val); // asigna color de la paleta desde el primer momento
           input.value = '';
           saveDataToStorage();
           renderAll();
@@ -1862,6 +1907,7 @@
       bolos: state.bolos,
       gasRate: state.gasRate,
       myCharangas: state.myCharangas,
+      charangaColors: state.charangaColors,
       myMembers: state.myMembers,
       allInstruments: state.allInstruments,
       myInstruments: state.myInstruments,
@@ -1889,6 +1935,7 @@
           state.bolos = data.bolos;
           if (data.gasRate) state.gasRate = data.gasRate;
           if (Array.isArray(data.myCharangas)) state.myCharangas = data.myCharangas;
+          if (data.charangaColors && typeof data.charangaColors === 'object') state.charangaColors = data.charangaColors;
           if (Array.isArray(data.myMembers)) state.myMembers = data.myMembers;
           if (Array.isArray(data.allInstruments)) state.allInstruments = data.allInstruments;
           if (Array.isArray(data.myInstruments)) state.myInstruments = data.myInstruments;
@@ -2403,6 +2450,10 @@
           state.myCharangas = cloudData.myCharangas;
         }
 
+        if (cloudData.charangaColors && typeof cloudData.charangaColors === 'object') {
+          state.charangaColors = { ...cloudData.charangaColors, ...state.charangaColors };
+        }
+
         if (cloudData.gasRate) {
           state.gasRate = cloudData.gasRate;
         }
@@ -2410,6 +2461,7 @@
         localStorage.setItem('charanga_bolos', JSON.stringify(state.bolos));
         localStorage.setItem('charanga_gasRate', state.gasRate.toString());
         localStorage.setItem('charanga_myCharangas', JSON.stringify(state.myCharangas));
+        localStorage.setItem('charanga_charangaColors', JSON.stringify(state.charangaColors));
 
         renderAll();
       } else {
@@ -2441,6 +2493,7 @@
         displayName: cloudSync.user.displayName || 'Músico',
         bolos: bolosToSync,
         myCharangas: state.myCharangas,
+        charangaColors: state.charangaColors,
         myInstruments: state.myInstruments,
         allInstruments: state.allInstruments,
         gasRate: state.gasRate,

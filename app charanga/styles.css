@@ -747,9 +747,10 @@ body {
 }
 
 .pill-charanga {
-  background-color: rgba(168, 85, 247, 0.15);
-  color: #C084FC;
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  /* El color real (fondo/texto/borde) lo fija charangaColorStyle() en línea,
+     según el grupo del bolo; este border sirve de base para que ese color
+     de borde en línea tenga efecto. */
+  border: 1px solid transparent;
 }
 
 .pill-instrument {
@@ -1094,6 +1095,7 @@ body {
   letter-spacing: -0.2px;
   padding: 0 1px;
   border-radius: 3px;
+  border: 1px solid transparent;
   white-space: nowrap;
   overflow: hidden;
   cursor: pointer;
@@ -1104,47 +1106,13 @@ body {
   height: 14px;
   max-height: 14px;
   box-sizing: border-box;
+  /* El color de fondo/texto/borde lo fija charangaColorStyle() en línea,
+     según el grupo del bolo (ver getCharangaColor en app.js). */
 }
 
 .cal-event-tag:hover {
   transform: scale(1.04);
   filter: brightness(1.15);
-}
-
-.cal-event-tag.upcoming {
-  background-color: rgba(59, 130, 246, 0.2);
-  color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.4);
-}
-
-[data-theme="light"] .cal-event-tag.upcoming {
-  background-color: #EFF6FF;
-  color: #2563EB;
-  border-color: #BFDBFE;
-}
-
-.cal-event-tag.pending {
-  background-color: rgba(245, 158, 11, 0.2);
-  color: var(--status-pending);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-}
-
-[data-theme="light"] .cal-event-tag.pending {
-  background-color: #FFFBEB;
-  color: #D97706;
-  border-color: #FDE68A;
-}
-
-.cal-event-tag.paid {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: var(--status-paid);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-}
-
-[data-theme="light"] .cal-event-tag.paid {
-  background-color: #ECFDF5;
-  color: #059669;
-  border-color: #A7F3D0;
 }
 
 /* MAPA INTERACTIVO DE SALAMANCA Y PINES */
@@ -1974,6 +1942,19 @@ input:checked + .slider:before {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.charanga-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.charanga-color-dot:hover {
+  transform: scale(1.15);
 }
 
 .tag-remove {

@@ -2036,6 +2036,7 @@
     measurementId: "G-GL3JZH29J2"
   };
   const DEFAULT_AVATAR = 'https://lh3.googleusercontent.com/a/default-user=s96-c';
+  const GOOGLE_WEB_CLIENT_ID = '416155530447-1vi80dao9h33k7hsr9cvd3gtor86cssk.apps.googleusercontent.com';
 
   const cloudSync = {
     user: null,
@@ -2059,7 +2060,7 @@
     const localUser = cloudSync.user ? cloudSync.user.email : '(ninguna)';
     const firebaseUser = (cloudSync.auth && cloudSync.auth.currentUser) ? cloudSync.auth.currentUser.email : '(ninguna)';
     el.textContent = `DEBUG BoloTracker\ncuenta guardada: ${localUser}\nsesión Firebase activa: ${firebaseUser}\n` +
-      `authState: ${cloudDebug.authState || '-'}\nredirect: ${cloudDebug.redirectResult || '-'}\n` +
+      `authState: ${cloudDebug.authState || '-'}\nGoogle Identity Services: ${cloudDebug.gis || '-'}\n` +
       `último error de sync: ${cloudDebug.lastSyncError || '-'}\núltimo error JS: ${lastJsError || '-'}`;
   }
 
@@ -2111,29 +2112,6 @@
     }
 
     if (ensureFirebaseReady()) {
-      // Solo tratamos como "fallo real" el caso en que nosotros mismos acabamos de
-      // lanzar signInWithRedirect (marcado abajo); así no alarmamos al usuario en
-      // una carga de página normal, pero sí le avisamos si el login que esperaba
-      // completar de verdad no llegó.
-      let wasRedirectPending = false;
-      try { wasRedirectPending = sessionStorage.getItem('bolotracker_redirect_pending') === '1'; } catch (e) {}
-      try { sessionStorage.removeItem('bolotracker_redirect_pending'); } catch (e) {}
-
-      cloudSync.auth.getRedirectResult().then(result => {
-        setDebugInfo('redirectResult', result && result.user ? ('ok:' + result.user.email) : 'sin-usuario');
-        if (result && result.user) {
-          applyFirebaseUser(result.user, { showAlert: true });
-        } else if (wasRedirectPending) {
-          showGoogleLoginError('Google no devolvió ninguna sesión al volver. Vuelve a intentarlo.');
-        }
-      }).catch(err => {
-        console.warn('Redirect Result error:', err);
-        setDebugInfo('redirectResult', 'error:' + (err && err.code ? err.code : err));
-        if (wasRedirectPending) {
-          showGoogleLoginError('No se pudo completar el inicio de sesión con Google: ' + (err && err.message ? err.message : 'error desconocido'));
-        }
-      });
-
       cloudSync.auth.onAuthStateChanged(user => {
         setDebugInfo('authState', user ? ('user:' + user.email) : 'null');
         if (user) {
@@ -2150,68 +2128,77 @@
       });
     }
 
+    initGoogleIdentityServices();
     setupCloudEventListeners();
     updateCloudUI();
   }
 
-  function setupCloudEventListeners() {
-    const loginBtn = document.getElementById('btn-google-login');
-    const logoutBtn = document.getElementById('btn-google-logout');
-    const retryLoginBtn = document.getElementById('btn-retry-google-login');
-    const nativeGooglePopupBtn = document.getElementById('btn-native-google-popup');
-
-    if (loginBtn) {
-      loginBtn.addEventListener('click', handleGoogleLogin);
+  // Google Identity Services: renderiza el botón oficial de Google y entrega el ID token
+  // directamente en la página (sin popup ni navegación fuera de la app). En este proyecto,
+  // tanto signInWithPopup como signInWithRedirect fallaban en Android al volver de Google
+  // (getRedirectResult nunca encontraba la sesión); este flujo evita ese salto por completo.
+  function initGoogleIdentityServices(retriesLeft = 20) {
+    if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+      if (retriesLeft > 0) {
+        setTimeout(() => initGoogleIdentityServices(retriesLeft - 1), 250);
+      } else {
+        setDebugInfo('gis', 'no cargó (¿bloqueado por el navegador o sin conexión?)');
+      }
+      return;
     }
-    if (nativeGooglePopupBtn) {
-      nativeGooglePopupBtn.addEventListener('click', handleGoogleLogin);
-    }
-    if (retryLoginBtn) {
-      retryLoginBtn.addEventListener('click', () => {
-        closeModal('modal-google-login');
-        handleGoogleLogin();
+    try {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_WEB_CLIENT_ID,
+        callback: handleGisCredentialResponse,
+        auto_select: false
       });
+      const container = document.getElementById('gis-button-container');
+      if (container) {
+        container.innerHTML = '';
+        google.accounts.id.renderButton(container, {
+          type: 'standard',
+          theme: 'filled_blue',
+          size: 'large',
+          shape: 'pill',
+          text: 'continue_with',
+          width: 280
+        });
+      }
+      setDebugInfo('gis', 'listo');
+    } catch (e) {
+      console.error('Error inicializando Google Identity Services:', e);
+      setDebugInfo('gis', 'error init: ' + e.message);
     }
+  }
+
+  function handleGisCredentialResponse(response) {
+    if (!response || !response.credential) {
+      showGoogleLoginError('Google no devolvió ninguna credencial. Vuelve a intentarlo.');
+      return;
+    }
+    if (!ensureFirebaseReady()) {
+      showGoogleLoginError('No se pudo conectar con el servicio de Google. Revisa tu conexión a internet e inténtalo de nuevo.');
+      return;
+    }
+    const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+    cloudSync.auth.signInWithCredential(credential).then(result => {
+      applyFirebaseUser(result.user, { showAlert: true });
+    }).catch(err => {
+      console.error('Error signInWithCredential:', err);
+      setDebugInfo('lastSyncError', 'signInWithCredential: ' + (err && err.code ? err.code : err.message));
+      showGoogleLoginError('No se pudo completar el inicio de sesión con Google: ' + (err && err.message ? err.message : 'error desconocido'));
+    });
+  }
+
+  function setupCloudEventListeners() {
+    const logoutBtn = document.getElementById('btn-google-logout');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', handleGoogleLogout);
     }
     // Nota: btn-manual-sync ya dispara handleManualSync() vía onclick en el HTML;
     // no añadir aquí un segundo listener o la sincronización se ejecutaría por duplicado.
+    // El botón de conexión con Google lo gestiona initGoogleIdentityServices().
   }
-
-  function handleGoogleLogin() {
-    if (!ensureFirebaseReady()) {
-      showGoogleLoginError('No se pudo conectar con el servicio de Google. Revisa tu conexión a internet e inténtalo de nuevo.');
-      return;
-    }
-
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('email');
-    provider.addScope('profile');
-
-    // El popup funciona de forma fiable en escritorio y, comprobado en este proyecto,
-    // también en Android una vez arreglado el crash que impedía completar el ciclo de
-    // signInWithRedirect. Lo probamos siempre primero; solo si el propio popup falla
-    // (bloqueado por el navegador, etc.) caemos a redirección como último recurso.
-    cloudSync.auth.signInWithPopup(provider).then(result => {
-      applyFirebaseUser(result.user, { showAlert: true });
-    }).catch(err => {
-      console.warn('signInWithPopup falló, probando con redirección:', err);
-      if (err && err.code === 'auth/unauthorized-domain') {
-        showGoogleLoginError('Este dominio no está autorizado en Firebase. Añade tu dominio en Firebase Console → Authentication → Configuración → Dominios autorizados.');
-        return;
-      }
-      try { sessionStorage.setItem('bolotracker_redirect_pending', '1'); } catch (e) {}
-      cloudSync.auth.signInWithRedirect(provider).catch(err2 => {
-        try { sessionStorage.removeItem('bolotracker_redirect_pending'); } catch (e) {}
-        console.error('Error también con redirección:', err2);
-        showGoogleLoginError('No se pudo iniciar sesión con Google. Inténtalo de nuevo o prueba desde otro navegador.');
-      });
-    });
-  }
-
-  // Exponer al scope global de window para garantizar compatibilidad con onclick
-  window.handleGoogleLogin = handleGoogleLogin;
 
   function showGoogleLoginError(message) {
     const modal = document.getElementById('modal-google-login');

@@ -2092,6 +2092,20 @@ input:checked + .slider:before {
   gap: 8px;
 }
 
+.cloud-debug-panel {
+  margin-top: 12px;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.6;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  color: #EF4444;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* BOTÓN NAVEGACIÓN GOOGLE MAPS GPS (DISCRETO Y FUNDIDO EN FONDO) */
 .btn-maps-subtle {
   display: inline-flex;

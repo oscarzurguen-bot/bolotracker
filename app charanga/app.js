@@ -2057,11 +2057,22 @@
     if (!el) return;
     let lastJsError = '';
     try { lastJsError = localStorage.getItem('bolotracker_last_js_error') || ''; } catch (e) {}
+
+    // El panel solo se muestra cuando hay de verdad algo que reportar, para no
+    // ensuciar la interfaz una vez que la sincronización funciona con normalidad.
+    if (!cloudDebug.lastSyncError && !lastJsError) {
+      el.classList.add('hidden');
+      el.textContent = '';
+      return;
+    }
+
     const localUser = cloudSync.user ? cloudSync.user.email : '(ninguna)';
     const firebaseUser = (cloudSync.auth && cloudSync.auth.currentUser) ? cloudSync.auth.currentUser.email : '(ninguna)';
-    el.textContent = `DEBUG BoloTracker\ncuenta guardada: ${localUser}\nsesión Firebase activa: ${firebaseUser}\n` +
-      `authState: ${cloudDebug.authState || '-'}\nGoogle Identity Services: ${cloudDebug.gis || '-'}\n` +
-      `último error de sync: ${cloudDebug.lastSyncError || '-'}\núltimo error JS: ${lastJsError || '-'}`;
+    const lines = [`⚠️ Problema de sincronización — cuenta: ${localUser} · sesión Firebase: ${firebaseUser}`];
+    if (cloudDebug.lastSyncError) lines.push(`Sync: ${cloudDebug.lastSyncError}`);
+    if (lastJsError) lines.push(lastJsError);
+    el.textContent = lines.join('\n');
+    el.classList.remove('hidden');
   }
 
   function ensureFirebaseReady() {

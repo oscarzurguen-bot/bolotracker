@@ -1561,6 +1561,10 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
+  /* 100dvh se ajusta a la altura visible real en móvil (barra de direcciones y
+     teclado incluidos); sin esto, un formulario con muchos campos puede acabar
+     "más alto" que la pantalla visible y verse empujado hacia el borde inferior. */
+  height: 100dvh;
   background-color: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(6px);
   z-index: 200;
@@ -1576,6 +1580,7 @@ body {
   width: 100%;
   max-width: 480px;
   max-height: min(88vh, 720px);
+  max-height: min(88dvh, 720px);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   display: flex;
@@ -1756,11 +1761,11 @@ body {
   color: var(--primary-gold);
 }
 
-/* SELECTOR DE GRUPOS / CHARANGAS (TARJETAS GRANDES, UNA POR FILA, SIN ABREVIAR NOMBRES) */
+/* SELECTOR DE GRUPOS / CHARANGAS (UNA POR FILA PARA NO ABREVIAR NOMBRES, TAMAÑO COMPACTO) */
 .charanga-selector {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 6px;
 }
 
 .charanga-selector .radio-card {
@@ -1769,25 +1774,25 @@ body {
 
 .charanga-selector .radio-content {
   width: 100%;
-  min-height: 56px;
-  padding: 14px 16px;
+  min-height: 38px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
+  gap: 8px;
   text-align: left;
   border-radius: var(--radius-md);
   box-sizing: border-box;
 }
 
 .charanga-selector .radio-icon {
-  font-size: 24px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 
 .charanga-selector .radio-label {
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.3;
   white-space: normal;

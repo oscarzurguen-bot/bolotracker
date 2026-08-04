@@ -1009,8 +1009,8 @@
     if (b.status === 'upcoming') tagClass = 'upcoming';
     else if (b.status === 'paid') tagClass = 'paid';
 
-    // Mostrar unicamente la hora de inicio del bolo
-    const timeStr = b.startTime || (b.hours ? `${b.hours}h` : 'Bolo');
+    // Mostrar únicamente la hora de inicio del bolo (sin caer en horas/"Bolo" genérico)
+    const timeStr = b.startTime || '';
     const fullInfo = `${b.type || b.name || 'Bolo'} (${b.charanga || 'Charanga'}) - ${b.startTime || ''}`;
 
     return `

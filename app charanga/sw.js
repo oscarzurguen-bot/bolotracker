@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bolotracker-v17.3.0';
+const CACHE_NAME = 'bolotracker-v17.3.1';
 const ASSETS = [
   './',
   './index.html',

@@ -1286,27 +1286,37 @@ body {
   box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
 }
 
-.passport-stamp-card.vip-town {
-  border-style: solid;
-  border-color: var(--primary-gold);
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), var(--bg-card));
-}
-
-[data-theme="light"] .passport-stamp-card.vip-town {
-  background: linear-gradient(135deg, #FEF3C7, #FFFFFF);
-  border-color: var(--primary-gold);
-}
-
-.stamp-badge-vip {
+.stamp-badge-star {
   position: absolute;
   top: 6px;
   right: 6px;
-  font-size: 10px;
-  background-color: var(--primary-gold);
-  color: #000;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.stamp-badge-star svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.star-count-text {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-heading);
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #0F172A;
+  line-height: 1;
+  margin-top: 1px;
 }
 
 .stamp-town-name {
@@ -1315,6 +1325,7 @@ body {
   font-weight: 700;
   color: var(--text-title);
   margin-bottom: 4px;
+  padding-right: 26px;
 }
 
 .stamp-info-row {

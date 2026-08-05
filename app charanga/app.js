@@ -760,6 +760,7 @@
     });
 
     let paidTotal = 0;
+    let paidCount = 0;
     let pendingTotal = 0;
     let totalKm = 0;
     let instCounts = {};
@@ -770,8 +771,12 @@
       const price = parseFloat(b.price) || 0;
       const gasMoney = getBoloGasAmount(b);
 
-      if (b.status === 'paid') paidTotal += price;
-      else if (b.status === 'pending') pendingTotal += price;
+      if (b.status === 'paid') {
+        paidTotal += price;
+        paidCount++;
+      } else if (b.status === 'pending') {
+        pendingTotal += price;
+      }
 
       if (b.hasCar && b.km) {
         totalKm += parseFloat(b.km) || 0;
@@ -809,18 +814,16 @@
     state.townMap = townMap;
     const townsList = Object.values(townMap);
     const uniqueTownsCount = townsList.length;
-    const grandTotal = paidTotal + pendingTotal; // Solo cachés sin gasolina
 
     const paidEl = document.getElementById('fin-paid-total');
     if (paidEl) paidEl.textContent = formatCurrency(paidTotal);
-    const pendingEl = document.getElementById('fin-pending-total');
-    if (pendingEl) pendingEl.textContent = formatCurrency(pendingTotal);
+    const paidCountEl = document.getElementById('fin-paid-count');
+    if (paidCountEl) paidCountEl.textContent = `${paidCount} ${paidCount === 1 ? 'bolo' : 'bolos'}`;
+
     const kmEl = document.getElementById('fin-total-km');
     if (kmEl) kmEl.textContent = `${totalKm.toLocaleString('es-ES')} km`;
     const finTownsEl = document.getElementById('fin-towns-count');
     if (finTownsEl) finTownsEl.textContent = `${uniqueTownsCount} ${uniqueTownsCount === 1 ? 'pueblo' : 'pueblos'}`;
-    const grandEl = document.getElementById('fin-grand-total');
-    if (grandEl) grandEl.textContent = formatCurrency(grandTotal);
 
     // RENDERIZAR PASAPORTE DE GIRA (SELLOS DE PUEBLOS)
     const townsCountBadge = document.getElementById('towns-count');
@@ -842,8 +845,15 @@
           const grandTotalTown = t.totalEarned; // Omite gasolina
 
           return `
-            <div class="passport-stamp-card ${isVip ? 'vip-town' : ''}" data-town="${escapeHtml(t.name)}" onclick="openTownDetailModal('${escapeHtml(t.name)}')" style="cursor: pointer;">
-              ${isVip ? `<span class="stamp-badge-vip">⭐ ${t.count} Bolos</span>` : ''}
+            <div class="passport-stamp-card" data-town="${escapeHtml(t.name)}" onclick="openTownDetailModal('${escapeHtml(t.name)}')" style="cursor: pointer;">
+              ${isVip ? `
+                <div class="stamp-badge-star" title="${t.count} bolos en ${escapeHtml(t.name)}">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#F59E0B" stroke="#D97706" stroke-width="1.2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                  <span class="star-count-text">${t.count}</span>
+                </div>
+              ` : ''}
               <div class="stamp-town-name">📍 ${escapeHtml(t.name)}</div>
               <div class="stamp-info-row">
                 <span>Último: ${formatDateStr(t.lastDate)}</span>

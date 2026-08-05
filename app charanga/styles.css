@@ -326,6 +326,8 @@ body {
   font-size: 18px;
   font-weight: 800;
   color: var(--primary-gold);
+  text-align: center;
+  width: 100%;
 }
 
 .estimated-banner .banner-value {

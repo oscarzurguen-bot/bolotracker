@@ -789,26 +789,28 @@
       const charName = b.charanga || (state.myCharangas[0] || 'Charanga');
       charangaCounts[charName] = (charangaCounts[charName] || 0) + 1;
 
-      // PASAPORTE DE PUEBLOS
-      const townName = (b.name || 'Pueblo').trim();
-      if (!townMap[townName]) {
-        townMap[townName] = {
-          name: townName,
-          count: 0,
-          totalEarned: 0,
-          totalGasoline: 0,
-          lastDate: b.date,
-          bolos: []
-        };
-      }
+      // PASAPORTE DE PUEBLOS (Solo bolos ya realizados: Pendiente o Cobrado)
+      if (b.status === 'pending' || b.status === 'paid') {
+        const townName = (b.name || 'Pueblo').trim();
+        if (!townMap[townName]) {
+          townMap[townName] = {
+            name: townName,
+            count: 0,
+            totalEarned: 0,
+            totalGasoline: 0,
+            lastDate: b.date,
+            bolos: []
+          };
+        }
 
-      townMap[townName].count++;
-      townMap[townName].totalEarned += price;
-      townMap[townName].totalGasoline += gasMoney;
-      townMap[townName].bolos.push(b);
+        townMap[townName].count++;
+        townMap[townName].totalEarned += price;
+        townMap[townName].totalGasoline += gasMoney;
+        townMap[townName].bolos.push(b);
 
-      if (new Date(b.date) > new Date(townMap[townName].lastDate)) {
-        townMap[townName].lastDate = b.date;
+        if (new Date(b.date) > new Date(townMap[townName].lastDate)) {
+          townMap[townName].lastDate = b.date;
+        }
       }
     });
 
@@ -980,7 +982,7 @@
         townData = state.townMap[townName];
       } else {
         const cleanTarget = townName.trim().toLowerCase();
-        const townBolos = state.bolos.filter(b => b.name && b.name.trim().toLowerCase() === cleanTarget);
+        const townBolos = state.bolos.filter(b => b.name && b.name.trim().toLowerCase() === cleanTarget && (b.status === 'pending' || b.status === 'paid'));
         if (townBolos.length > 0) {
           townData = {
             name: townName,

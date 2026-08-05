@@ -41,7 +41,8 @@
     currentFilter: 'upcoming',
     currentView: 'list', // 'list' | 'calendar'
     calendarDate: new Date(),
-    editingBoloMembers: []
+    editingBoloMembers: [],
+    passportSearchQuery: ''
   };
 
   // === INICIALIZACIÓN DE LA APLICACIÓN ===
@@ -840,31 +841,44 @@
       } else {
         townsList.sort((a, b) => b.count - a.count || b.totalEarned - a.totalEarned);
 
-        passportGrid.innerHTML = townsList.map(t => {
-          const isVip = t.count > 1;
-          const grandTotalTown = t.totalEarned; // Omite gasolina
+        let filteredTowns = townsList;
+        if (state.passportSearchQuery) {
+          filteredTowns = townsList.filter(t => t.name.toLowerCase().includes(state.passportSearchQuery));
+        }
 
-          return `
-            <div class="passport-stamp-card" data-town="${escapeHtml(t.name)}" onclick="openTownDetailModal('${escapeHtml(t.name)}')" style="cursor: pointer;">
-              ${isVip ? `
-                <div class="stamp-badge-star" title="${t.count} bolos en ${escapeHtml(t.name)}">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#F59E0B" stroke="#D97706" stroke-width="1.2">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                  <span class="star-count-text">${t.count}</span>
-                </div>
-              ` : ''}
-              <div class="stamp-town-name">📍 ${escapeHtml(t.name)}</div>
-              <div class="stamp-info-row">
-                <span>Último: ${formatDateStr(t.lastDate)}</span>
-              </div>
-              <div class="stamp-info-row" style="margin-top: 6px;">
-                <span>Caché Ganado:</span>
-                <span class="stamp-total-money">${formatCurrency(grandTotalTown)}</span>
-              </div>
+        if (filteredTowns.length === 0) {
+          passportGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 24px; font-size: 13px;">
+              🔍 No se encontró ningún pueblo que coincida con "<strong>${escapeHtml(state.passportSearchQuery)}</strong>".
             </div>
           `;
-        }).join('');
+        } else {
+          passportGrid.innerHTML = filteredTowns.map(t => {
+            const isVip = t.count > 1;
+            const grandTotalTown = t.totalEarned; // Omite gasolina
+
+            return `
+              <div class="passport-stamp-card" data-town="${escapeHtml(t.name)}" onclick="openTownDetailModal('${escapeHtml(t.name)}')" style="cursor: pointer;">
+                ${isVip ? `
+                  <div class="stamp-badge-star" title="${t.count} bolos en ${escapeHtml(t.name)}">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#F59E0B" stroke="#D97706" stroke-width="1.2">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <span class="star-count-text">${t.count}</span>
+                  </div>
+                ` : ''}
+                <div class="stamp-town-name">📍 ${escapeHtml(t.name)}</div>
+                <div class="stamp-info-row">
+                  <span>Último: ${formatDateStr(t.lastDate)}</span>
+                </div>
+                <div class="stamp-info-row" style="margin-top: 6px;">
+                  <span>Caché Ganado:</span>
+                  <span class="stamp-total-money">${formatCurrency(grandTotalTown)}</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
       }
     }
 
@@ -1593,6 +1607,28 @@
     if (finMonthSelect) {
       finMonthSelect.addEventListener('change', (e) => {
         state.financesFilterMonth = e.target.value;
+        renderFinances();
+      });
+    }
+
+    // BUSCADOR EN PASAPORTE DE GIRA
+    const passportSearchInput = document.getElementById('passport-search-input');
+    const passportClearBtn = document.getElementById('btn-clear-passport-search');
+    if (passportSearchInput) {
+      passportSearchInput.addEventListener('input', (e) => {
+        state.passportSearchQuery = e.target.value.trim().toLowerCase();
+        if (passportClearBtn) {
+          if (state.passportSearchQuery) passportClearBtn.classList.remove('hidden');
+          else passportClearBtn.classList.add('hidden');
+        }
+        renderFinances();
+      });
+    }
+    if (passportClearBtn) {
+      passportClearBtn.addEventListener('click', () => {
+        if (passportSearchInput) passportSearchInput.value = '';
+        state.passportSearchQuery = '';
+        passportClearBtn.classList.add('hidden');
         renderFinances();
       });
     }

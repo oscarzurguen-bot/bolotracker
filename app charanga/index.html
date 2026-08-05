@@ -15,7 +15,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="styles.css?v=13.13.0">
+  <link rel="stylesheet" href="styles.css?v=13.14.0">
 </head>
 <body>
   <div class="app-container">
@@ -265,7 +265,13 @@
 
         <div class="passport-section">
           <div class="passport-header">
-            <p class="passport-sub" style="font-size: 13px;">Toca cualquier pueblo para abrir su ficha rápida con las fechas y el dinero acumulado:</p>
+            <p class="passport-sub" style="font-size: 13px; margin-bottom: 10px;">Toca cualquier pueblo para abrir su información rápida con las fechas y el dinero acumulado:</p>
+
+            <div class="passport-search-wrapper" style="position: relative; margin-bottom: 14px;">
+              <input type="text" id="passport-search-input" class="form-input" placeholder="🔍 Buscar pueblo por nombre..." style="padding-left: 34px; padding-right: 30px; font-size: 14px; height: 42px;">
+              <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 15px; opacity: 0.7; pointer-events: none;">📍</span>
+              <button type="button" id="btn-clear-passport-search" class="hidden" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 2px 6px;">&times;</button>
+            </div>
           </div>
 
           <div id="passport-grid" class="passport-grid">
@@ -595,7 +601,7 @@
   <!-- Google Identity Services: inicio de sesión sin popup ni redirección de página completa -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <script src="app.js?v=16.13.0"></script>
+  <script src="app.js?v=16.14.0"></script>
   <script>
     // En entorno local (localhost / 127.0.0.1 / file://), limpiar cache y Service Workers antiguos para ver cambios al instante
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' || !window.location.hostname) {

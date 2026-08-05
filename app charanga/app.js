@@ -982,7 +982,7 @@
 
     if (!townData || !townData.bolos) return;
 
-    titleEl.textContent = `📍 Ficha del Pueblo: ${townName}`;
+    titleEl.textContent = `📍 ${townName}`;
 
     const totalMoney = townData.totalEarned; // Omite gasolina
 

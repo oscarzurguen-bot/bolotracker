@@ -590,14 +590,19 @@
       filtered = state.bolos.filter(b => b.charanga === state.currentFilter);
     }
 
-    // Ordenar de más reciente (más cercano en el tiempo) a más lejano en el tiempo
+    // Ordenación inteligente según filtro
     try {
       filtered.sort((a, b) => {
         const timeA = a.startTime || a.time || '00:00';
         const timeB = b.startTime || b.time || '00:00';
         const dateA = a.date ? new Date(a.date + 'T' + timeA).getTime() : 0;
         const dateB = b.date ? new Date(b.date + 'T' + timeB).getTime() : 0;
-        return dateA - dateB;
+
+        if (state.currentFilter === 'upcoming') {
+          return dateA - dateB; // Próximos: del más cercano a más lejano en el tiempo
+        }
+        // Pendientes, Cobrados y resto de filtros: del más reciente al más antiguo
+        return dateB - dateA;
       });
     } catch (e) {
       console.warn('Error ordenando bolos:', e);

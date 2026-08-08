@@ -704,7 +704,161 @@
     renderFinances();
   }
 
-  window.handleFinancesFilterChange = handleFinancesFilterChange;
+  // === CLASIFICACIÓN DE MUNICIPIOS (PROVINCIAS Y COMUNIDADES AUTÓNOMAS DE ESPAÑA) ===
+  const SPAIN_TOWNS_MAP = {
+    // Salamanca
+    'salamanca': { province: 'Salamanca', region: 'Castilla y León', isCapital: true },
+    'vitigudino': { province: 'Salamanca', region: 'Castilla y León' },
+    'majugajes': { province: 'Salamanca', region: 'Castilla y León' },
+    'alderodrigo': { province: 'Salamanca', region: 'Castilla y León' },
+    'bejar': { province: 'Salamanca', region: 'Castilla y León' },
+    'béjar': { province: 'Salamanca', region: 'Castilla y León' },
+    'ciudad rodrigo': { province: 'Salamanca', region: 'Castilla y León' },
+    'peñaranda': { province: 'Salamanca', region: 'Castilla y León' },
+    'peñaranda de bracamonte': { province: 'Salamanca', region: 'Castilla y León' },
+    'alba de tormes': { province: 'Salamanca', region: 'Castilla y León' },
+    'guijuelo': { province: 'Salamanca', region: 'Castilla y León' },
+    'santa marta': { province: 'Salamanca', region: 'Castilla y León' },
+    'santa marta de tormes': { province: 'Salamanca', region: 'Castilla y León' },
+    'carbajosa': { province: 'Salamanca', region: 'Castilla y León' },
+    'carbajosa de la sagrada': { province: 'Salamanca', region: 'Castilla y León' },
+    'villamayor': { province: 'Salamanca', region: 'Castilla y León' },
+    'villares de la reina': { province: 'Salamanca', region: 'Castilla y León' },
+    'ledesma': { province: 'Salamanca', region: 'Castilla y León' },
+    'lumbrales': { province: 'Salamanca', region: 'Castilla y León' },
+    'la alberca': { province: 'Salamanca', region: 'Castilla y León' },
+    'tamames': { province: 'Salamanca', region: 'Castilla y León' },
+    'macotera': { province: 'Salamanca', region: 'Castilla y León' },
+    'babilafuente': { province: 'Salamanca', region: 'Castilla y León' },
+    'villoria': { province: 'Salamanca', region: 'Castilla y León' },
+    'candelario': { province: 'Salamanca', region: 'Castilla y León' },
+    'san muñoz': { province: 'Salamanca', region: 'Castilla y León' },
+
+    // Ávila
+    'avila': { province: 'Ávila', region: 'Castilla y León', isCapital: true },
+    'ávila': { province: 'Ávila', region: 'Castilla y León', isCapital: true },
+    'pascualcobo': { province: 'Ávila', region: 'Castilla y León' },
+    'pasqualcobo': { province: 'Ávila', region: 'Castilla y León' },
+    'arevalo': { province: 'Ávila', region: 'Castilla y León' },
+    'arévalo': { province: 'Ávila', region: 'Castilla y León' },
+    'las navas del marques': { province: 'Ávila', region: 'Castilla y León' },
+    'el tiemblo': { province: 'Ávila', region: 'Castilla y León' },
+    'cebreros': { province: 'Ávila', region: 'Castilla y León' },
+    'candeleda': { province: 'Ávila', region: 'Castilla y León' },
+    'arenas de san pedro': { province: 'Ávila', region: 'Castilla y León' },
+    'madrigal de las altas torres': { province: 'Ávila', region: 'Castilla y León' },
+    'el barco de avila': { province: 'Ávila', region: 'Castilla y León' },
+    'el barco de ávila': { province: 'Ávila', region: 'Castilla y León' },
+    'piedrahita': { province: 'Ávila', region: 'Castilla y León' },
+
+    // Zamora
+    'zamora': { province: 'Zamora', region: 'Castilla y León', isCapital: true },
+    'toro': { province: 'Zamora', region: 'Castilla y León' },
+    'benavente': { province: 'Zamora', region: 'Castilla y León' },
+    'puebla de sanabria': { province: 'Zamora', region: 'Castilla y León' },
+    'bermillos de sayago': { province: 'Zamora', region: 'Castilla y León' },
+    'fermoselle': { province: 'Zamora', region: 'Castilla y León' },
+
+    // Valladolid
+    'valladolid': { province: 'Valladolid', region: 'Castilla y León', isCapital: true },
+    'medina del campo': { province: 'Valladolid', region: 'Castilla y León' },
+    'tordesillas': { province: 'Valladolid', region: 'Castilla y León' },
+    'laguna de duero': { province: 'Valladolid', region: 'Castilla y León' },
+    'arroyo de la encomienda': { province: 'Valladolid', region: 'Castilla y León' },
+    'peñafiel': { province: 'Valladolid', region: 'Castilla y León' },
+    'penafiel': { province: 'Valladolid', region: 'Castilla y León' },
+
+    // León
+    'leon': { province: 'León', region: 'Castilla y León', isCapital: true },
+    'león': { province: 'León', region: 'Castilla y León', isCapital: true },
+    'ponferrada': { province: 'León', region: 'Castilla y León' },
+    'astorga': { province: 'León', region: 'Castilla y León' },
+    'la bañez': { province: 'León', region: 'Castilla y León' },
+    'la bañeza': { province: 'León', region: 'Castilla y León' },
+
+    // Segovia, Burgos, Palencia, Soria
+    'segovia': { province: 'Segovia', region: 'Castilla y León', isCapital: true },
+    'cuellar': { province: 'Segovia', region: 'Castilla y León' },
+    'cuéllar': { province: 'Segovia', region: 'Castilla y León' },
+    'burgos': { province: 'Burgos', region: 'Castilla y León', isCapital: true },
+    'aranda de duero': { province: 'Burgos', region: 'Castilla y León' },
+    'palencia': { province: 'Palencia', region: 'Castilla y León', isCapital: true },
+    'soria': { province: 'Soria', region: 'Castilla y León', isCapital: true },
+
+    // Extremadura
+    'caceres': { province: 'Cáceres', region: 'Extremadura', isCapital: true },
+    'cáceres': { province: 'Cáceres', region: 'Extremadura', isCapital: true },
+    'plasencia': { province: 'Cáceres', region: 'Extremadura' },
+    'coria': { province: 'Cáceres', region: 'Extremadura' },
+    'badajoz': { province: 'Badajoz', region: 'Extremadura', isCapital: true },
+    'merida': { province: 'Badajoz', region: 'Extremadura' },
+    'mérida': { province: 'Badajoz', region: 'Extremadura' },
+
+    // Madrid
+    'madrid': { province: 'Madrid', region: 'Comunidad de Madrid', isCapital: true },
+    'alcala de henares': { province: 'Madrid', region: 'Comunidad de Madrid' },
+    'alcalá de henares': { province: 'Madrid', region: 'Comunidad de Madrid' },
+    'mostoles': { province: 'Madrid', region: 'Comunidad de Madrid' },
+    'móstoles': { province: 'Madrid', region: 'Comunidad de Madrid' },
+
+    // Castilla-La Mancha
+    'toledo': { province: 'Toledo', region: 'Castilla-La Mancha', isCapital: true },
+    'talavera de la reina': { province: 'Toledo', region: 'Castilla-La Mancha' },
+    'guadalajara': { province: 'Guadalajara', region: 'Castilla-La Mancha', isCapital: true },
+    'cuenca': { province: 'Cuenca', region: 'Castilla-La Mancha', isCapital: true },
+    'ciudad real': { province: 'Ciudad Real', region: 'Castilla-La Mancha', isCapital: true },
+    'albacete': { province: 'Albacete', region: 'Castilla-La Mancha', isCapital: true },
+
+    // Andalucía
+    'sevilla': { province: 'Sevilla', region: 'Andalucía', isCapital: true },
+    'malaga': { province: 'Málaga', region: 'Andalucía', isCapital: true },
+    'málaga': { province: 'Málaga', region: 'Andalucía', isCapital: true },
+    'granada': { province: 'Granada', region: 'Andalucía', isCapital: true },
+    'cordoba': { province: 'Córdoba', region: 'Andalucía', isCapital: true }
+  };
+
+  function getTownLocationInfo(townName) {
+    if (!townName) return { region: 'Otras Regiones', province: 'Otras Localidades', isCapital: false };
+
+    const raw = String(townName).trim();
+    const lower = raw.toLowerCase();
+    const clean = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    let res = null;
+    if (SPAIN_TOWNS_MAP[lower]) res = { ...SPAIN_TOWNS_MAP[lower] };
+    else if (SPAIN_TOWNS_MAP[clean]) res = { ...SPAIN_TOWNS_MAP[clean] };
+
+    if (!res) {
+      for (const key in SPAIN_TOWNS_MAP) {
+        const keyClean = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (clean.includes(keyClean) || keyClean.includes(clean)) {
+          res = { ...SPAIN_TOWNS_MAP[key] };
+          break;
+        }
+      }
+    }
+
+    if (!res) {
+      const match = raw.match(/(.+)\((.+)\)/);
+      if (match && match[2]) {
+        const prov = match[2].trim();
+        res = { region: 'España / Otras', province: prov, isCapital: false };
+      } else {
+        res = { region: 'Otras Regiones', province: 'Otras Localidades', isCapital: false };
+      }
+    }
+
+    if (lower.includes('capital') || clean.includes('capital')) {
+      res.isCapital = true;
+    }
+    const cleanProv = (res.province || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const cleanTown = clean.replace(/capital/gi, '').trim();
+    if (cleanTown === cleanProv && cleanProv !== 'otras localidades') {
+      res.isCapital = true;
+    }
+
+    return res;
+  }
 
   // === RENDER FINANZAS Y ESTADÍSTICAS CON FILTROS ===
   function renderFinances() {
@@ -860,31 +1014,83 @@
             </div>
           `;
         } else {
-          passportGrid.innerHTML = filteredTowns.map(t => {
-            const isVip = t.count > 1;
-            const grandTotalTown = t.totalEarned; // Omite gasolina
+          // Agrupar pueblos por Comunidad Autónoma y Provincia
+          const groupedMap = {};
+          filteredTowns.forEach(t => {
+            const loc = getTownLocationInfo(t.name);
+            const reg = loc.region;
+            const prov = loc.province;
 
-            return `
-              <div class="passport-stamp-card" data-town="${escapeHtml(t.name)}" onclick="openTownDetailModal('${escapeHtml(t.name)}')" style="cursor: pointer;">
-                ${isVip ? `
-                  <div class="stamp-badge-star" title="${t.count} bolos en ${escapeHtml(t.name)}">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#F59E0B" stroke="#D97706" stroke-width="1.2">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                    <span class="star-count-text">${t.count}</span>
-                  </div>
-                ` : ''}
-                <div class="stamp-town-name">📍 ${escapeHtml(t.name)}</div>
-                <div class="stamp-info-row">
-                  <span>Último: ${formatDateStr(t.lastDate)}</span>
+            if (!groupedMap[reg]) groupedMap[reg] = {};
+            if (!groupedMap[reg][prov]) groupedMap[reg][prov] = [];
+            groupedMap[reg][prov].push(t);
+          });
+
+          let htmlContent = '';
+
+          for (const regionName in groupedMap) {
+            htmlContent += `
+              <div class="region-classification-block">
+                <div class="region-header-title">
+                  🏛️ <span>${escapeHtml(regionName)}</span>
                 </div>
-                <div class="stamp-info-row" style="margin-top: 6px;">
-                  <span>Caché Ganado:</span>
-                  <span class="stamp-total-money">${formatCurrency(grandTotalTown)}</span>
-                </div>
-              </div>
             `;
-          }).join('');
+
+            const provincesObj = groupedMap[regionName];
+            for (const provName in provincesObj) {
+              const townsArray = provincesObj[provName];
+
+              htmlContent += `
+                <div class="province-group-block">
+                  <div class="province-subtitle">
+                    📍 <span>${escapeHtml(provName)}</span>
+                    <span style="font-size: 11px; opacity: 0.65; font-weight: 600;">(${townsArray.length} ${townsArray.length === 1 ? 'pueblo' : 'pueblos'})</span>
+                  </div>
+                  <div class="passport-grid">
+              `;
+
+              htmlContent += townsArray.map(t => {
+                const isVip = t.count > 1;
+                const locInfo = getTownLocationInfo(t.name);
+                const isCap = Boolean(locInfo && locInfo.isCapital);
+                const grandTotalTown = t.totalEarned; // Omite gasolina
+
+                return `
+                  <div class="passport-stamp-card" data-town="${escapeHtml(t.name)}" onclick="openTownDetailModal('${escapeHtml(t.name)}')" style="cursor: pointer;">
+                    ${isVip ? `
+                      <div class="stamp-badge-star" title="${t.count} bolos en ${escapeHtml(t.name)}">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="#F59E0B" stroke="#D97706" stroke-width="1.2">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                        <span class="star-count-text">${t.count}</span>
+                      </div>
+                    ` : ''}
+                    <div class="stamp-town-name">
+                      <span class="town-icon">📍</span>
+                      <span class="town-text-name">${escapeHtml(t.name)}</span>
+                    </div>
+                    ${isCap ? `<span class="stamp-badge-capital" title="Capital de provincia">👑 Capital</span>` : ''}
+                    <div class="stamp-info-row">
+                      <span>Último: ${formatDateStr(t.lastDate)}</span>
+                    </div>
+                    <div class="stamp-info-row" style="margin-top: 6px;">
+                      <span>Caché Ganado:</span>
+                      <span class="stamp-total-money">${formatCurrency(grandTotalTown)}</span>
+                    </div>
+                  </div>
+                `;
+              }).join('');
+
+              htmlContent += `
+                  </div>
+                </div>
+              `;
+            }
+
+            htmlContent += `</div>`;
+          }
+
+          passportGrid.innerHTML = htmlContent;
         }
       }
     }

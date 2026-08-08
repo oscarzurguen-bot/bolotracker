@@ -151,6 +151,7 @@
       const storedMembers = localStorage.getItem('charanga_myMembers');
       const storedAllInstruments = localStorage.getItem('charanga_allInstruments');
       const storedMyInstruments = localStorage.getItem('charanga_myInstruments');
+      const storedOverrides = localStorage.getItem('charanga_townLocationOverrides');
 
       if (storedBolos !== null) {
         try {
@@ -171,6 +172,9 @@
       if (storedMembers) state.myMembers = JSON.parse(storedMembers);
       if (storedAllInstruments) state.allInstruments = JSON.parse(storedAllInstruments);
       if (storedMyInstruments) state.myInstruments = JSON.parse(storedMyInstruments);
+      if (storedOverrides) {
+        try { state.townLocationOverrides = JSON.parse(storedOverrides); } catch (e) {}
+      }
 
       // Sanitizar listas de instrumentos para asegurar que no contengan nombres de músicos
       const defaultList = ['Bombo', 'Caja', 'Trompeta', 'Saxofón', 'Trombón', 'Piano', 'Bombardino'];
@@ -211,6 +215,7 @@
     localStorage.setItem('charanga_myMembers', JSON.stringify(state.myMembers));
     localStorage.setItem('charanga_allInstruments', JSON.stringify(state.allInstruments));
     localStorage.setItem('charanga_myInstruments', JSON.stringify(state.myInstruments));
+    localStorage.setItem('charanga_townLocationOverrides', JSON.stringify(state.townLocationOverrides || {}));
 
     if (typeof syncToCloud === 'function') {
       syncToCloud();
@@ -706,7 +711,7 @@
 
   // === CLASIFICACIÓN DE MUNICIPIOS (PROVINCIAS Y COMUNIDADES AUTÓNOMAS DE ESPAÑA) ===
   const SPAIN_TOWNS_MAP = {
-    // Salamanca
+    // Salamanca (Comarca por comarca, pueblos principales y pedanías)
     'salamanca': { province: 'Salamanca', region: 'Castilla y León', isCapital: true },
     'vitigudino': { province: 'Salamanca', region: 'Castilla y León' },
     'majugajes': { province: 'Salamanca', region: 'Castilla y León' },
@@ -714,8 +719,10 @@
     'bejar': { province: 'Salamanca', region: 'Castilla y León' },
     'béjar': { province: 'Salamanca', region: 'Castilla y León' },
     'ciudad rodrigo': { province: 'Salamanca', region: 'Castilla y León' },
+    'mirobriga': { province: 'Salamanca', region: 'Castilla y León' },
     'peñaranda': { province: 'Salamanca', region: 'Castilla y León' },
     'peñaranda de bracamonte': { province: 'Salamanca', region: 'Castilla y León' },
+    'bracamonte': { province: 'Salamanca', region: 'Castilla y León' },
     'alba de tormes': { province: 'Salamanca', region: 'Castilla y León' },
     'guijuelo': { province: 'Salamanca', region: 'Castilla y León' },
     'santa marta': { province: 'Salamanca', region: 'Castilla y León' },
@@ -723,16 +730,106 @@
     'carbajosa': { province: 'Salamanca', region: 'Castilla y León' },
     'carbajosa de la sagrada': { province: 'Salamanca', region: 'Castilla y León' },
     'villamayor': { province: 'Salamanca', region: 'Castilla y León' },
+    'villamayor de armuña': { province: 'Salamanca', region: 'Castilla y León' },
     'villares de la reina': { province: 'Salamanca', region: 'Castilla y León' },
+    'villares': { province: 'Salamanca', region: 'Castilla y León' },
+    'cabrerizos': { province: 'Salamanca', region: 'Castilla y León' },
     'ledesma': { province: 'Salamanca', region: 'Castilla y León' },
     'lumbrales': { province: 'Salamanca', region: 'Castilla y León' },
     'la alberca': { province: 'Salamanca', region: 'Castilla y León' },
+    'alberca': { province: 'Salamanca', region: 'Castilla y León' },
     'tamames': { province: 'Salamanca', region: 'Castilla y León' },
     'macotera': { province: 'Salamanca', region: 'Castilla y León' },
     'babilafuente': { province: 'Salamanca', region: 'Castilla y León' },
     'villoria': { province: 'Salamanca', region: 'Castilla y León' },
+    'villoruela': { province: 'Salamanca', region: 'Castilla y León' },
+    'arabayona': { province: 'Salamanca', region: 'Castilla y León' },
+    'arabayona de mogica': { province: 'Salamanca', region: 'Castilla y León' },
     'candelario': { province: 'Salamanca', region: 'Castilla y León' },
     'san muñoz': { province: 'Salamanca', region: 'Castilla y León' },
+    'san felices': { province: 'Salamanca', region: 'Castilla y León' },
+    'san felices de los gallegos': { province: 'Salamanca', region: 'Castilla y León' },
+    'sequeros': { province: 'Salamanca', region: 'Castilla y León' },
+    'mogarraz': { province: 'Salamanca', region: 'Castilla y León' },
+    'aldeadavila': { province: 'Salamanca', region: 'Castilla y León' },
+    'aldeadávila': { province: 'Salamanca', region: 'Castilla y León' },
+    'aldeadávila de la ribera': { province: 'Salamanca', region: 'Castilla y León' },
+    'trabanca': { province: 'Salamanca', region: 'Castilla y León' },
+    'pereña': { province: 'Salamanca', region: 'Castilla y León' },
+    'pereña de la ribera': { province: 'Salamanca', region: 'Castilla y León' },
+    'fresno alhandiga': { province: 'Salamanca', region: 'Castilla y León' },
+    'fresno alhándiga': { province: 'Salamanca', region: 'Castilla y León' },
+    'la fuente de san esteban': { province: 'Salamanca', region: 'Castilla y León' },
+    'fuente de san esteban': { province: 'Salamanca', region: 'Castilla y León' },
+    'cabrillas': { province: 'Salamanca', region: 'Castilla y León' },
+    'boada': { province: 'Salamanca', region: 'Castilla y León' },
+    'villavieja': { province: 'Salamanca', region: 'Castilla y León' },
+    'villavieja de yeltes': { province: 'Salamanca', region: 'Castilla y León' },
+    'yecla': { province: 'Salamanca', region: 'Castilla y León' },
+    'yecla de yeltes': { province: 'Salamanca', region: 'Castilla y León' },
+    'ciperez': { province: 'Salamanca', region: 'Castilla y León' },
+    'cipérez': { province: 'Salamanca', region: 'Castilla y León' },
+    'peralejos de abajo': { province: 'Salamanca', region: 'Castilla y León' },
+    'pozos de mondarrubio': { province: 'Salamanca', region: 'Castilla y León' },
+    'cantalapiedra': { province: 'Salamanca', region: 'Castilla y León' },
+    'valverdon': { province: 'Salamanca', region: 'Castilla y León' },
+    'valverdón': { province: 'Salamanca', region: 'Castilla y León' },
+    'doñinos': { province: 'Salamanca', region: 'Castilla y León' },
+    'doñinos de salamanca': { province: 'Salamanca', region: 'Castilla y León' },
+    'calvarrasa': { province: 'Salamanca', region: 'Castilla y León' },
+    'calvarrasa de abajo': { province: 'Salamanca', region: 'Castilla y León' },
+    'calvarrasa de arriba': { province: 'Salamanca', region: 'Castilla y León' },
+    'pelabravo': { province: 'Salamanca', region: 'Castilla y León' },
+    'arapiles': { province: 'Salamanca', region: 'Castilla y León' },
+    'miranda de azan': { province: 'Salamanca', region: 'Castilla y León' },
+    'miranda de azán': { province: 'Salamanca', region: 'Castilla y León' },
+    'mozarbez': { province: 'Salamanca', region: 'Castilla y León' },
+    'mozárbez': { province: 'Salamanca', region: 'Castilla y León' },
+    'buenavista': { province: 'Salamanca', region: 'Castilla y León' },
+    'martinamor': { province: 'Salamanca', region: 'Castilla y León' },
+    'encinas de abajo': { province: 'Salamanca', region: 'Castilla y León' },
+    'encinas de arriba': { province: 'Salamanca', region: 'Castilla y León' },
+    'ejeme': { province: 'Salamanca', region: 'Castilla y León' },
+    'anaya de alba': { province: 'Salamanca', region: 'Castilla y León' },
+    'navales': { province: 'Salamanca', region: 'Castilla y León' },
+    'valdecarros': { province: 'Salamanca', region: 'Castilla y León' },
+    'larrodrigo': { province: 'Salamanca', region: 'Castilla y León' },
+    'alaraz': { province: 'Salamanca', region: 'Castilla y León' },
+    'santiago de la puebla': { province: 'Salamanca', region: 'Castilla y León' },
+    'paradinas de san juan': { province: 'Salamanca', region: 'Castilla y León' },
+    'saldeana': { province: 'Salamanca', region: 'Castilla y León' },
+    'barruecopardo': { province: 'Salamanca', region: 'Castilla y León' },
+    'saucelle': { province: 'Salamanca', region: 'Castilla y León' },
+    'vilvestre': { province: 'Salamanca', region: 'Castilla y León' },
+    'masueco': { province: 'Salamanca', region: 'Castilla y León' },
+    'hinojosa de duero': { province: 'Salamanca', region: 'Castilla y León' },
+    'la fregeneda': { province: 'Salamanca', region: 'Castilla y León' },
+    'fregeneda': { province: 'Salamanca', region: 'Castilla y León' },
+    'sobradillo': { province: 'Salamanca', region: 'Castilla y León' },
+    'ahigal de los aceiteros': { province: 'Salamanca', region: 'Castilla y León' },
+    'puerto de bejar': { province: 'Salamanca', region: 'Castilla y León' },
+    'puerto de béjar': { province: 'Salamanca', region: 'Castilla y León' },
+    'montemayor del rio': { province: 'Salamanca', region: 'Castilla y León' },
+    'montemayor del río': { province: 'Salamanca', region: 'Castilla y León' },
+    'horcajo de montemayor': { province: 'Salamanca', region: 'Castilla y León' },
+    'sotoserrano': { province: 'Salamanca', region: 'Castilla y León' },
+    'miranda del castañar': { province: 'Salamanca', region: 'Castilla y León' },
+    'san martin del castañar': { province: 'Salamanca', region: 'Castilla y León' },
+    'villanueva del conde': { province: 'Salamanca', region: 'Castilla y León' },
+    'santibañez de la sierra': { province: 'Salamanca', region: 'Castilla y León' },
+    'santibáñez de la sierra': { province: 'Salamanca', region: 'Castilla y León' },
+    'valero': { province: 'Salamanca', region: 'Castilla y León' },
+    'san esteban de la sierra': { province: 'Salamanca', region: 'Castilla y León' },
+    'los santos': { province: 'Salamanca', region: 'Castilla y León' },
+    'endrinal': { province: 'Salamanca', region: 'Castilla y León' },
+    'monleon': { province: 'Salamanca', region: 'Castilla y León' },
+    'linares de riofrio': { province: 'Salamanca', region: 'Castilla y León' },
+    'linares de riofrío': { province: 'Salamanca', region: 'Castilla y León' },
+    'escurial de la sierra': { province: 'Salamanca', region: 'Castilla y León' },
+    'navarredonda de la rinconada': { province: 'Salamanca', region: 'Castilla y León' },
+    'la rinconada de la sierra': { province: 'Salamanca', region: 'Castilla y León' },
+    'el cabaco': { province: 'Salamanca', region: 'Castilla y León' },
+    'nava de francia': { province: 'Salamanca', region: 'Castilla y León' },
 
     // Ávila
     'avila': { province: 'Ávila', region: 'Castilla y León', isCapital: true },
@@ -750,6 +847,8 @@
     'el barco de avila': { province: 'Ávila', region: 'Castilla y León' },
     'el barco de ávila': { province: 'Ávila', region: 'Castilla y León' },
     'piedrahita': { province: 'Ávila', region: 'Castilla y León' },
+    'piedrahíta': { province: 'Ávila', region: 'Castilla y León' },
+    'muñico': { province: 'Ávila', region: 'Castilla y León' },
 
     // Zamora
     'zamora': { province: 'Zamora', region: 'Castilla y León', isCapital: true },
@@ -758,6 +857,10 @@
     'puebla de sanabria': { province: 'Zamora', region: 'Castilla y León' },
     'bermillos de sayago': { province: 'Zamora', region: 'Castilla y León' },
     'fermoselle': { province: 'Zamora', region: 'Castilla y León' },
+    'fuentesauco': { province: 'Zamora', region: 'Castilla y León' },
+    'fuentesaúco': { province: 'Zamora', region: 'Castilla y León' },
+    'corrales del vino': { province: 'Zamora', region: 'Castilla y León' },
+    'alcañices': { province: 'Zamora', region: 'Castilla y León' },
 
     // Valladolid
     'valladolid': { province: 'Valladolid', region: 'Castilla y León', isCapital: true },
@@ -767,16 +870,14 @@
     'arroyo de la encomienda': { province: 'Valladolid', region: 'Castilla y León' },
     'peñafiel': { province: 'Valladolid', region: 'Castilla y León' },
     'penafiel': { province: 'Valladolid', region: 'Castilla y León' },
+    'simancas': { province: 'Valladolid', region: 'Castilla y León' },
 
-    // León
+    // León, Segovia, Burgos, Palencia, Soria
     'leon': { province: 'León', region: 'Castilla y León', isCapital: true },
     'león': { province: 'León', region: 'Castilla y León', isCapital: true },
     'ponferrada': { province: 'León', region: 'Castilla y León' },
     'astorga': { province: 'León', region: 'Castilla y León' },
-    'la bañez': { province: 'León', region: 'Castilla y León' },
     'la bañeza': { province: 'León', region: 'Castilla y León' },
-
-    // Segovia, Burgos, Palencia, Soria
     'segovia': { province: 'Segovia', region: 'Castilla y León', isCapital: true },
     'cuellar': { province: 'Segovia', region: 'Castilla y León' },
     'cuéllar': { province: 'Segovia', region: 'Castilla y León' },
@@ -790,6 +891,14 @@
     'cáceres': { province: 'Cáceres', region: 'Extremadura', isCapital: true },
     'plasencia': { province: 'Cáceres', region: 'Extremadura' },
     'coria': { province: 'Cáceres', region: 'Extremadura' },
+    'navalmoral de la mata': { province: 'Cáceres', region: 'Extremadura' },
+    'trujillo': { province: 'Cáceres', region: 'Extremadura' },
+    'hervas': { province: 'Cáceres', region: 'Extremadura' },
+    'hervás': { province: 'Cáceres', region: 'Extremadura' },
+    'jaraiz': { province: 'Cáceres', region: 'Extremadura' },
+    'jaraíz': { province: 'Cáceres', region: 'Extremadura' },
+    'jaraíz de la vera': { province: 'Cáceres', region: 'Extremadura' },
+    'moraleja': { province: 'Cáceres', region: 'Extremadura' },
     'badajoz': { province: 'Badajoz', region: 'Extremadura', isCapital: true },
     'merida': { province: 'Badajoz', region: 'Extremadura' },
     'mérida': { province: 'Badajoz', region: 'Extremadura' },
@@ -800,16 +909,20 @@
     'alcalá de henares': { province: 'Madrid', region: 'Comunidad de Madrid' },
     'mostoles': { province: 'Madrid', region: 'Comunidad de Madrid' },
     'móstoles': { province: 'Madrid', region: 'Comunidad de Madrid' },
+    'fuenlabrada': { province: 'Madrid', region: 'Comunidad de Madrid' },
+    'leganes': { province: 'Madrid', region: 'Comunidad de Madrid' },
+    'leganés': { province: 'Madrid', region: 'Comunidad de Madrid' },
+    'getafe': { province: 'Madrid', region: 'Comunidad de Madrid' },
+    'alcorcon': { province: 'Madrid', region: 'Comunidad de Madrid' },
+    'alcorcón': { province: 'Madrid', region: 'Comunidad de Madrid' },
 
-    // Castilla-La Mancha
+    // Castilla-La Mancha & Andalucía
     'toledo': { province: 'Toledo', region: 'Castilla-La Mancha', isCapital: true },
     'talavera de la reina': { province: 'Toledo', region: 'Castilla-La Mancha' },
     'guadalajara': { province: 'Guadalajara', region: 'Castilla-La Mancha', isCapital: true },
     'cuenca': { province: 'Cuenca', region: 'Castilla-La Mancha', isCapital: true },
     'ciudad real': { province: 'Ciudad Real', region: 'Castilla-La Mancha', isCapital: true },
     'albacete': { province: 'Albacete', region: 'Castilla-La Mancha', isCapital: true },
-
-    // Andalucía
     'sevilla': { province: 'Sevilla', region: 'Andalucía', isCapital: true },
     'malaga': { province: 'Málaga', region: 'Andalucía', isCapital: true },
     'málaga': { province: 'Málaga', region: 'Andalucía', isCapital: true },
@@ -817,35 +930,120 @@
     'cordoba': { province: 'Córdoba', region: 'Andalucía', isCapital: true }
   };
 
+  // MAPA DE REGIONES POR PROVINCIA DE ESPAÑA
+  const PROVINCE_TO_REGION_MAP = {
+    'Salamanca': 'Castilla y León',
+    'Ávila': 'Castilla y León',
+    'Zamora': 'Castilla y León',
+    'Valladolid': 'Castilla y León',
+    'León': 'Castilla y León',
+    'Segovia': 'Castilla y León',
+    'Burgos': 'Castilla y León',
+    'Palencia': 'Castilla y León',
+    'Soria': 'Castilla y León',
+    'Cáceres': 'Extremadura',
+    'Badajoz': 'Extremadura',
+    'Madrid': 'Comunidad de Madrid',
+    'Toledo': 'Castilla-La Mancha',
+    'Guadalajara': 'Castilla-La Mancha',
+    'Cuenca': 'Castilla-La Mancha',
+    'Ciudad Real': 'Castilla-La Mancha',
+    'Albacete': 'Castilla-La Mancha',
+    'A Coruña': 'Galicia',
+    'Lugo': 'Galicia',
+    'Ourense': 'Galicia',
+    'Pontevedra': 'Galicia',
+    'Asturias': 'Principado de Asturias',
+    'Cantabria': 'Cantabria',
+    'Álava': 'País Vasco',
+    'Guipúzcoa': 'País Vasco',
+    'Vizcaya': 'País Vasco',
+    'Navarra': 'Comunidad Foral de Navarra',
+    'La Rioja': 'La Rioja',
+    'Zaragoza': 'Aragón',
+    'Huesca': 'Aragón',
+    'Teruel': 'Aragón',
+    'Barcelona': 'Cataluña',
+    'Girona': 'Cataluña',
+    'Lleida': 'Cataluña',
+    'Tarragona': 'Cataluña',
+    'Valencia': 'Comunidad Valenciana',
+    'Alicante': 'Comunidad Valenciana',
+    'Castellón': 'Comunidad Valenciana',
+    'Murcia': 'Región de Murcia',
+    'Sevilla': 'Andalucía',
+    'Málaga': 'Andalucía',
+    'Granada': 'Andalucía',
+    'Córdoba': 'Andalucía',
+    'Almería': 'Andalucía',
+    'Jaén': 'Andalucía',
+    'Huelva': 'Andalucía',
+    'Cádiz': 'Andalucía',
+    'Baleares': 'Islas Baleares',
+    'Las Palmas': 'Canarias',
+    'Santa Cruz de Tenerife': 'Canarias'
+  };
+
   function getTownLocationInfo(townName) {
-    if (!townName) return { region: 'Otras Regiones', province: 'Otras Localidades', isCapital: false };
+    if (!townName) return { region: 'Castilla y León', province: 'Salamanca', isCapital: false };
 
     const raw = String(townName).trim();
     const lower = raw.toLowerCase();
-    const clean = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const clean = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").trim();
 
+    // 1. Revisar sobreescritura manual guardada por el usuario
+    if (state.townLocationOverrides) {
+      for (const k in state.townLocationOverrides) {
+        if (k.toLowerCase() === lower || k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === clean) {
+          const ov = state.townLocationOverrides[k];
+          return {
+            province: ov.province || 'Salamanca',
+            region: ov.region || PROVINCE_TO_REGION_MAP[ov.province] || 'Castilla y León',
+            isCapital: Boolean(ov.isCapital || (ov.province && ov.province.toLowerCase() === lower))
+          };
+        }
+      }
+    }
+
+    // 2. Coincidencia exacta o directa por NFD
     let res = null;
     if (SPAIN_TOWNS_MAP[lower]) res = { ...SPAIN_TOWNS_MAP[lower] };
     else if (SPAIN_TOWNS_MAP[clean]) res = { ...SPAIN_TOWNS_MAP[clean] };
 
+    // 3. Substring & Token matching inteligente
     if (!res) {
+      const words = clean.split(/\s+/).filter(w => w.length >= 4);
       for (const key in SPAIN_TOWNS_MAP) {
-        const keyClean = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        if (clean.includes(keyClean) || keyClean.includes(clean)) {
+        const keyClean = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        if (clean === keyClean || clean.includes(keyClean) || keyClean.includes(clean)) {
+          res = { ...SPAIN_TOWNS_MAP[key] };
+          break;
+        }
+        if (words.some(w => keyClean.length >= 4 && (w === keyClean || keyClean === w))) {
           res = { ...SPAIN_TOWNS_MAP[key] };
           break;
         }
       }
     }
 
+    // 4. Detección entre paréntesis, ej: Pueblo (Ávila) o Pueblo (Cáceres)
     if (!res) {
       const match = raw.match(/(.+)\((.+)\)/);
       if (match && match[2]) {
-        const prov = match[2].trim();
-        res = { region: 'España / Otras', province: prov, isCapital: false };
-      } else {
-        res = { region: 'Otras Regiones', province: 'Otras Localidades', isCapital: false };
+        const provCandidate = match[2].trim();
+        const provClean = provCandidate.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        for (const pName in PROVINCE_TO_REGION_MAP) {
+          if (pName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === provClean) {
+            res = { region: PROVINCE_TO_REGION_MAP[pName], province: pName, isCapital: false };
+            break;
+          }
+        }
       }
+    }
+
+    // 5. Criterio por defecto fiable para charangas locales: Salamanca (Castilla y León)
+    if (!res) {
+      res = { region: 'Castilla y León', province: 'Salamanca', isCapital: false };
     }
 
     if (lower.includes('capital') || clean.includes('capital')) {
@@ -1215,7 +1413,20 @@
 
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(townName + ', España')}`;
 
+    const locInfo = getTownLocationInfo(townName);
+
     let html = `
+      <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+        <div style="font-size: 13px;">
+          <span style="color: var(--text-muted);">Clasificación en Pasaporte:</span><br>
+          <strong style="color: var(--primary-gold);">📍 ${escapeHtml(locInfo.province)} (${escapeHtml(locInfo.region)})</strong>
+          ${locInfo.isCapital ? '<span style="font-size: 11px; margin-left: 6px;">👑 Capital</span>' : ''}
+        </div>
+        <button type="button" class="btn-secondary" onclick="openChangeTownLocationModal('${escapeHtml(townName)}')" style="font-size: 12px; padding: 5px 10px; flex-shrink: 0;">
+          ✏️ Cambiar
+        </button>
+      </div>
+
       <div class="finance-overview-card" style="margin-bottom: 16px;">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
           <h3>📊 Resumen en ${escapeHtml(townName)}</h3>
@@ -1281,6 +1492,72 @@
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
   }
+
+  function openModal(modalId) {
+    if (!modalId) return;
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
+  }
+
+  function closeModal(modalId) {
+    if (!modalId) return;
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+
+  // === CAMBIAR UBICACIÓN DE UN PUEBLO MANUALLMENTE ===
+  function openChangeTownLocationModal(townName) {
+    if (!townName) return;
+    const targetNameEl = document.getElementById('change-location-target-name');
+    const inputHiddenEl = document.getElementById('change-location-town-name');
+    const selectEl = document.getElementById('change-location-province-select');
+
+    if (targetNameEl) targetNameEl.textContent = townName;
+    if (inputHiddenEl) inputHiddenEl.value = townName;
+
+    const currentInfo = getTownLocationInfo(townName);
+    if (selectEl && currentInfo && currentInfo.province) {
+      selectEl.value = currentInfo.province;
+    }
+
+    openModal('modal-change-location');
+  }
+
+  function saveTownLocationOverride() {
+    const inputHiddenEl = document.getElementById('change-location-town-name');
+    const selectEl = document.getElementById('change-location-province-select');
+    if (!inputHiddenEl || !selectEl) return;
+
+    const townName = inputHiddenEl.value.trim();
+    const province = selectEl.value.trim();
+    if (!townName || !province) return;
+
+    const region = PROVINCE_TO_REGION_MAP[province] || 'Castilla y León';
+    const isCapital = province.toLowerCase() === townName.toLowerCase() || townName.toLowerCase().includes('capital');
+
+    if (!state.townLocationOverrides) state.townLocationOverrides = {};
+    state.townLocationOverrides[townName] = {
+      province: province,
+      region: region,
+      isCapital: isCapital
+    };
+
+    saveDataToStorage();
+    closeModal('modal-change-location');
+
+    renderFinances();
+    openTownDetailModal(townName);
+  }
+
+  window.openChangeTownLocationModal = openChangeTownLocationModal;
+  window.saveTownLocationOverride = saveTownLocationOverride;
 
   // === RENDERIZADO Y LÓGICA DEL CALENDARIO ENTERO DE BOLOS ===
   let calendarCurrentDate = new Date();
@@ -1536,6 +1813,11 @@
     document.getElementById('btn-quick-add').addEventListener('click', () => {
       openModalBolo();
     });
+
+    const btnSaveLoc = document.getElementById('btn-save-town-location');
+    if (btnSaveLoc) {
+      btnSaveLoc.addEventListener('click', saveTownLocationOverride);
+    }
 
     // FILTROS DE CHIPS
     document.querySelectorAll('.chip-filter').forEach(chip => {
@@ -2911,6 +3193,11 @@
           state.gasRate = cloudData.gasRate;
         }
 
+        if (cloudData.townLocationOverrides && typeof cloudData.townLocationOverrides === 'object') {
+          state.townLocationOverrides = { ...cloudData.townLocationOverrides, ...(state.townLocationOverrides || {}) };
+          localStorage.setItem('charanga_townLocationOverrides', JSON.stringify(state.townLocationOverrides));
+        }
+
         localStorage.setItem('charanga_bolos', JSON.stringify(state.bolos));
         localStorage.setItem('charanga_gasRate', state.gasRate.toString());
         localStorage.setItem('charanga_myCharangas', JSON.stringify(state.myCharangas));
@@ -2951,6 +3238,7 @@
         charangaGasRates: state.charangaGasRates,
         myInstruments: state.myInstruments,
         allInstruments: state.allInstruments,
+        townLocationOverrides: state.townLocationOverrides || {},
         gasRate: state.gasRate,
         lastUpdated: new Date().toISOString()
       }, { merge: true });

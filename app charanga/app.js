@@ -1241,8 +1241,11 @@
               htmlContent += `
                 <div class="province-group-block">
                   <div class="province-subtitle">
-                    📍 <span>${escapeHtml(provName)}</span>
-                    <span style="font-size: 11px; opacity: 0.65; font-weight: 600;">(${townsArray.length} ${townsArray.length === 1 ? 'pueblo' : 'pueblos'})</span>
+                    <div class="province-left-wrapper">
+                      <span>📍</span>
+                      <span class="province-name-text">${escapeHtml(provName)}</span>
+                    </div>
+                    <span class="province-count-badge">${townsArray.length} ${townsArray.length === 1 ? 'pueblo' : 'pueblos'}</span>
                   </div>
                   <div class="passport-grid">
               `;

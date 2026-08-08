@@ -1265,20 +1265,22 @@ body {
 /* CLASIFICACIÓN DE PASAPORTE POR COMUNIDADES Y PROVINCIAS */
 .region-classification-block {
   width: 100%;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 
 .region-header-title {
   width: 100%;
   box-sizing: border-box;
   font-family: var(--font-heading);
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 900;
   color: var(--primary-gold);
-  border-bottom: 2px solid rgba(245, 158, 11, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid rgba(245, 158, 11, 0.45);
   padding-bottom: 6px;
-  margin-bottom: 12px;
-  margin-top: 8px;
+  margin-bottom: 14px;
+  margin-top: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1286,21 +1288,59 @@ body {
 
 .province-group-block {
   width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .province-subtitle {
   width: 100%;
   box-sizing: border-box;
   font-family: var(--font-heading);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   color: var(--text-title);
-  margin-bottom: 8px;
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 4px solid var(--primary-gold);
+  border-radius: 4px 10px 10px 4px;
+  padding: 8px 12px;
+  margin-top: 10px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  opacity: 0.9;
+  justify-content: space-between;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .province-subtitle {
+  background: rgba(245, 158, 11, 0.12);
+  border-left-color: #D97706;
+  color: #1F2937;
+}
+
+.province-left-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.province-name-text {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.province-count-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.22);
+  color: var(--primary-gold);
+  padding: 3px 9px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+[data-theme="light"] .province-count-badge {
+  background: rgba(217, 119, 6, 0.15);
+  color: #B45309;
 }
 
 .passport-stamp-card {

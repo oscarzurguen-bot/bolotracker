@@ -1157,7 +1157,7 @@
         pendingTotal += price;
       }
 
-      if (b.km) {
+      if (b.hasCar && b.km) {
         totalKm += parseFloat(b.km) || 0;
       }
 
@@ -1892,16 +1892,6 @@
 
     kmInput.addEventListener('input', updateGasCalc);
 
-    // AUTO CÁLCULO DE KM AL ESCRIBIR EL NOMBRE DEL PUEBLO
-    const boloNameInput = document.getElementById('bolo-name');
-
-    if (boloNameInput) {
-      boloNameInput.addEventListener('change', () => triggerAutoKmCalculation(false));
-      boloNameInput.addEventListener('blur', () => {
-        triggerAutoKmCalculation(false);
-      });
-    }
-
     // CÁLCULO AUTOMÁTICO DE DURACIÓN EN HORAS SEGÚN HORAS DE INICIO Y FIN
     const startTimeInput = document.getElementById('bolo-start-time');
     const endTimeInput = document.getElementById('bolo-end-time');
@@ -2202,119 +2192,6 @@
     const gasCalcInput = document.getElementById('bolo-gas-calc');
     if (gasCalcInput) gasCalcInput.value = Math.round(km * rate).toString();
     updateGasRateLabel();
-  }
-
-  // === CÁLCULO AUTOMÁTICO DE DISTANCIA (MAPS & GPS OSRM) ===
-  function calcHaversineDistanceKm(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
-
-  async function getDistanceToTownInKm(townName, customOrigin = null) {
-    if (!townName) return null;
-    const cleanTown = townName.trim();
-    if (!cleanTown) return null;
-
-    try {
-      // 1. Geocodificar ubicación del pueblo con la API de Nominatim / OpenStreetMap
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanTown + ', España')}&format=json&limit=1`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      const data = await res.json();
-
-      if (data && data.length > 0) {
-        const townLat = parseFloat(data[0].lat);
-        const townLng = parseFloat(data[0].lon);
-
-        // Coordenadas de salida de carretera de Salamanca (coincidentes con la ruta de Google Maps)
-        let originLat = 40.9631;
-        let originLng = -5.6630;
-        let originLabel = 'Salamanca';
-
-        if (customOrigin && typeof customOrigin === 'object') {
-          originLat = customOrigin.lat;
-          originLng = customOrigin.lng;
-          originLabel = 'tu ubicación GPS';
-        } else if (state.homeOriginName) {
-          originLabel = state.homeOriginName;
-        }
-
-        // 2. Ruta por carretera real con OSRM Driving Router (OpenStreetMap / Maps engine)
-        try {
-          const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${townLng},${townLat}?overview=false`;
-          const osrmRes = await fetch(osrmUrl);
-          const osrmData = await osrmRes.json();
-
-          if (osrmData && osrmData.routes && osrmData.routes.length > 0) {
-            const metersOneWay = osrmData.routes[0].distance;
-            const kmOneWay = metersOneWay / 1000;
-            const kmRoundTrip = Math.round(kmOneWay * 2);
-            return { km: kmRoundTrip, oneWayKm: Math.round(kmOneWay), originLabel };
-          }
-        } catch (osrmErr) {
-          console.warn('OSRM router offline, fallback to Haversine * 1.12:', osrmErr);
-        }
-
-        // Factor de curvatura medio de carreteras españolas (1.12 - 1.15)
-        const haversineKm = calcHaversineDistanceKm(originLat, originLng, townLat, townLng) * 1.12;
-        const kmRoundTrip = Math.round(haversineKm * 2);
-        return { km: kmRoundTrip, oneWayKm: Math.round(haversineKm), originLabel };
-      }
-    } catch (err) {
-      console.warn('Network error in town distance lookup:', err);
-    }
-    return null;
-  }
-
-  let autoKmDebounceTimer = null;
-  async function triggerAutoKmCalculation(forceGPS = false) {
-    const nameInput = document.getElementById('bolo-name');
-    const kmInput = document.getElementById('bolo-km');
-    const badge = document.getElementById('town-distance-badge');
-
-    if (!nameInput || !kmInput) return;
-    const townName = nameInput.value.trim();
-    if (!townName) {
-      if (badge) badge.classList.add('hidden');
-      return;
-    }
-
-    if (badge) {
-      badge.textContent = `📍 Calculando km a "${townName}"...`;
-      badge.classList.remove('hidden');
-    }
-
-    let customOrigin = null;
-    if (forceGPS && navigator.geolocation) {
-      try {
-        const pos = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 });
-        });
-        if (pos && pos.coords) {
-          customOrigin = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        }
-      } catch (gpsErr) {
-        console.warn('GPS declined or timed out:', gpsErr);
-      }
-    }
-
-    const result = await getDistanceToTownInKm(townName, customOrigin);
-    if (result && result.km > 0) {
-      kmInput.value = result.km;
-      updateGasCalc();
-      if (badge) {
-        badge.textContent = `✨ ~${result.km} km (Ida y vuelta desde ${result.originLabel}) ✓`;
-      }
-    } else {
-      if (badge) {
-        badge.textContent = `📍 No se autocalcularon los km para "${townName}". Puedes introducirlos a mano.`;
-      }
-    }
   }
 
   // === CÁLCULO AUTOMÁTICO DE HORAS (INICIO -> FIN) ===

@@ -15,7 +15,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="styles.css?v=13.29.0">
+  <link rel="stylesheet" href="styles.css?v=13.31.0">
 </head>
 <body>
   <div class="app-container">
@@ -232,16 +232,15 @@
           </div>
         </div>
 
-        <!-- PANEL 2 INDEPENDIENTE: KILÓMETROS Y DESPLAZAMIENTOS -->
-        <div class="finance-overview-card" style="margin-top: 16px;">
-          <h3>🚗 Desplazamientos</h3>
-          <div class="finance-row">
-            <span>Total Kilómetros recorridos:</span>
-            <strong id="fin-total-km" style="color: #60A5FA;">0 km</strong>
+        <!-- DOS PANELES EN PARALELO: KM CONDUCIDOS Y PUEBLOS VISITADOS -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px;">
+          <div class="finance-overview-card" style="padding: 14px 12px; margin-top: 0; display: flex; flex-direction: column; justify-content: space-between;">
+            <h3 style="font-size: 13px; margin-bottom: 8px; font-weight: 700;">🚗 Km conducidos</h3>
+            <strong id="fin-total-km" style="font-size: 18px; font-weight: 800; color: #60A5FA; font-family: var(--font-heading);">0 km</strong>
           </div>
-          <div class="finance-row">
-            <span>Nº de pueblos visitados:</span>
-            <strong id="fin-towns-count" style="color: var(--primary-gold);">0 pueblos</strong>
+          <div class="finance-overview-card" style="padding: 14px 12px; margin-top: 0; display: flex; flex-direction: column; justify-content: space-between;">
+            <h3 style="font-size: 13px; margin-bottom: 8px; font-weight: 700;">📍 Pueblos visitados</h3>
+            <strong id="fin-towns-count" style="font-size: 18px; font-weight: 800; color: var(--primary-gold); font-family: var(--font-heading);">0 pueblos</strong>
           </div>
         </div>
 
@@ -691,7 +690,7 @@
   <!-- Google Identity Services: inicio de sesión sin popup ni redirección de página completa -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <script src="app.js?v=16.29.0"></script>
+  <script src="app.js?v=16.31.0"></script>
   <script>
     // En entorno local (localhost / 127.0.0.1 / file://), limpiar cache y Service Workers antiguos para ver cambios al instante
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' || !window.location.hostname) {

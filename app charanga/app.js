@@ -1433,7 +1433,13 @@
 
     titleEl.textContent = `📍 ${townName}`;
 
-    const totalMoney = townData.totalEarned; // Omite gasolina
+    // Sumar ÚNICAMENTE el dinero de los bolos cobrados (status === 'paid'), excluyendo pendientes
+    const totalPaidMoney = townData.bolos.reduce((sum, b) => {
+      if (b.status === 'paid') {
+        return sum + (parseFloat(b.price) || 0);
+      }
+      return sum;
+    }, 0);
 
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(townName + ', España')}`;
 
@@ -1465,8 +1471,8 @@
         </div>
         <div class="finance-divider"></div>
         <div class="finance-row total-highlight">
-          <span>CACHÉ TOTAL GANADO:</span>
-          <strong style="color: var(--primary-gold);">${formatCurrency(totalMoney)}</strong>
+          <span>Dinero cobrado:</span>
+          <strong style="color: var(--primary-gold);">${formatCurrency(totalPaidMoney)}</strong>
         </div>
       </div>
 

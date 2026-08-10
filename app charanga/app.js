@@ -439,14 +439,24 @@
     modal.style.display = 'flex';
   }
 
-  function renderCharangaRadios() {
+  function renderCharangaRadios(selectedVal = null) {
     const container = document.getElementById('charanga-radio-group');
     if (!container) return;
 
-    const currentSelected = document.querySelector('input[name="charanga"]:checked')?.value || (state.myCharangas[0] || 'Otra');
+    let targetCharanga = selectedVal;
+    if (!targetCharanga) {
+      const checkedRadio = document.querySelector('input[name="charanga"]:checked');
+      if (checkedRadio) targetCharanga = checkedRadio.value;
+    }
+    if (!targetCharanga) {
+      targetCharanga = state.myCharangas[0] || 'Otro';
+    }
+
+    const isInMyCharangas = state.myCharangas.includes(targetCharanga);
+    const isOtroSelected = targetCharanga === 'Otra' || targetCharanga === 'Otro' || (!isInMyCharangas && targetCharanga && targetCharanga !== 'Otra' && targetCharanga !== 'Otro');
 
     let html = state.myCharangas.map((ch, idx) => {
-      const isChecked = currentSelected === ch || (idx === 0 && !state.myCharangas.includes(currentSelected) && currentSelected !== 'Otra');
+      const isChecked = isInMyCharangas ? (targetCharanga === ch) : (idx === 0 && !isOtroSelected);
       return `
         <label class="radio-card">
           <input type="radio" name="charanga" value="${escapeHtml(ch)}" ${isChecked ? 'checked' : ''}>
@@ -461,22 +471,33 @@
 
     html += `
       <label class="radio-card">
-        <input type="radio" name="charanga" value="Otra" ${currentSelected === 'Otra' ? 'checked' : ''}>
+        <input type="radio" name="charanga" value="Otra" ${isOtroSelected ? 'checked' : ''}>
         <div class="radio-content">
           <span class="radio-icon">✏️</span>
-          <span class="radio-label">Otra</span>
+          <span class="radio-label">Otro</span>
         </div>
       </label>
     `;
 
     container.innerHTML = html;
 
+    const otherContainer = document.getElementById('charanga-other-container');
+    const otherInput = document.getElementById('bolo-charanga-other');
+
+    if (isOtroSelected && targetCharanga && targetCharanga !== 'Otra' && targetCharanga !== 'Otro' && !isInMyCharangas) {
+      if (otherContainer) otherContainer.classList.remove('hidden');
+      if (otherInput) otherInput.value = targetCharanga;
+    } else if (isOtroSelected && (targetCharanga === 'Otra' || targetCharanga === 'Otro')) {
+      if (otherContainer) otherContainer.classList.remove('hidden');
+    } else {
+      if (otherContainer) otherContainer.classList.add('hidden');
+      if (otherInput) otherInput.value = '';
+    }
+
     container.querySelectorAll('input[name="charanga"]').forEach(radio => {
       radio.addEventListener('change', () => {
-        const otherContainer = document.getElementById('charanga-other-container');
-        if (radio.value === 'Otra') {
+        if (radio.value === 'Otra' || radio.value === 'Otro') {
           if (otherContainer) otherContainer.classList.remove('hidden');
-          const otherInput = document.getElementById('bolo-charanga-other');
           if (otherInput) otherInput.focus();
         } else {
           if (otherContainer) otherContainer.classList.add('hidden');
@@ -2155,7 +2176,7 @@
   // === CÁLCULO DE GASOLINA EN MODAL ===
   function getSelectedCharangaInForm() {
     const checked = document.querySelector('input[name="charanga"]:checked');
-    if (!checked || checked.value === 'Otra') return null;
+    if (!checked || checked.value === 'Otra' || checked.value === 'Otro') return null;
     return checked.value;
   }
 
@@ -2335,21 +2356,8 @@
       document.getElementById('bolo-notes').value = bolo.notes || '';
 
       // Charanga
-      const charangaVal = bolo.charanga || 'MenudoChaperon';
-      const otherContainer = document.getElementById('charanga-other-container');
-      const otherInput = document.getElementById('bolo-charanga-other');
-
-      if (charangaVal === 'MenudoChaperon' || charangaVal === 'VayaMovida') {
-        const charRadio = document.querySelector(`input[name="charanga"][value="${charangaVal}"]`);
-        if (charRadio) charRadio.checked = true;
-        if (otherContainer) otherContainer.classList.add('hidden');
-        if (otherInput) otherInput.value = '';
-      } else {
-        const otherRadio = document.querySelector(`input[name="charanga"][value="Otra"]`);
-        if (otherRadio) otherRadio.checked = true;
-        if (otherContainer) otherContainer.classList.remove('hidden');
-        if (otherInput) otherInput.value = charangaVal;
-      }
+      const charangaVal = bolo.charanga || (state.myCharangas[0] || 'Charanga');
+      renderCharangaRadios(charangaVal);
 
       // Instrumento
       renderInstrumentRadios(bolo.instrument);
@@ -2439,9 +2447,9 @@
       const charangaRadioChecked = document.querySelector('input[name="charanga"]:checked');
       let charangaRadio = charangaRadioChecked ? charangaRadioChecked.value : (state.myCharangas[0] || 'Charanga');
       let charanga = charangaRadio;
-      if (charangaRadio === 'Otra') {
+      if (charangaRadio === 'Otra' || charangaRadio === 'Otro') {
         const otherText = document.getElementById('bolo-charanga-other').value.trim();
-        charanga = otherText || 'Otra Charanga';
+        charanga = otherText || 'Otro Grupo';
       }
 
       const instrument = '';

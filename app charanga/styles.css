@@ -361,6 +361,12 @@ body {
   margin-bottom: 14px;
 }
 
+#view-calendario .view-header {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  padding-top: 4px;
+}
+
 .view-title-group {
   display: flex;
   align-items: center;

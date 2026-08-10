@@ -2069,34 +2069,6 @@
     const btnClearAll = document.getElementById('btn-clear-all');
     if (btnClearAll) btnClearAll.addEventListener('click', clearAllData);
 
-    // NAVEGACIÓN DE MESES EN CALENDARIO
-    const btnCalPrev = document.getElementById('btn-cal-prev');
-    if (btnCalPrev) {
-      btnCalPrev.addEventListener('click', (e) => {
-        if (e) e.stopPropagation();
-        calendarCurrentDate = new Date(calendarCurrentDate.getFullYear(), calendarCurrentDate.getMonth() - 1, 1);
-        renderCalendar();
-      });
-    }
-
-    const btnCalToday = document.getElementById('btn-cal-today');
-    if (btnCalToday) {
-      btnCalToday.addEventListener('click', (e) => {
-        if (e) e.stopPropagation();
-        calendarCurrentDate = new Date();
-        renderCalendar();
-      });
-    }
-
-    const btnCalNext = document.getElementById('btn-cal-next');
-    if (btnCalNext) {
-      btnCalNext.addEventListener('click', (e) => {
-        if (e) e.stopPropagation();
-        calendarCurrentDate = new Date(calendarCurrentDate.getFullYear(), calendarCurrentDate.getMonth() + 1, 1);
-        renderCalendar();
-      });
-    }
-
     // FILTROS DE ESTADÍSTICAS (AÑO Y MES)
     const finYearSelect = document.getElementById('fin-filter-year');
     if (finYearSelect) {

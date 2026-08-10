@@ -1568,9 +1568,6 @@
   function renderCalendar() {
     const titleEl = document.getElementById('calendar-month-title');
     const gridEl = document.getElementById('calendar-days-grid');
-    const monthSelect = document.getElementById('calendar-month-select');
-    const yearSelect = document.getElementById('calendar-year-select');
-
     if (!titleEl || !gridEl) return;
 
     // Asegurar que la fecha esté fijada al día 1 para evitar saltos al cambiar entre meses de 30 y 31 días
@@ -1583,27 +1580,6 @@
     ];
 
     titleEl.textContent = `${monthNames[month]} ${year}`;
-
-    if (monthSelect) {
-      monthSelect.value = month.toString();
-    }
-
-    if (yearSelect) {
-      const yearsSet = new Set();
-      state.bolos.forEach(b => {
-        if (b.date) {
-          const y = b.date.split('-')[0];
-          if (y && y.length === 4) yearsSet.add(y);
-        }
-      });
-      const currentYearStr = new Date().getFullYear().toString();
-      const viewingYearStr = year.toString();
-      yearsSet.add(currentYearStr);
-      yearsSet.add(viewingYearStr);
-
-      const yearsArr = Array.from(yearsSet).sort((a, b) => b.localeCompare(a));
-      yearSelect.innerHTML = yearsArr.map(y => `<option value="${y}" ${y === viewingYearStr ? 'selected' : ''}>${y}</option>`).join('');
-    }
 
     // Agrupar bolos por fecha YYYY-MM-DD
     const bolosByDate = {};
@@ -1787,25 +1763,9 @@
     renderCalendar();
   }
 
-  function handleCalendarSelectChange() {
-    const monthSelect = document.getElementById('calendar-month-select');
-    const yearSelect = document.getElementById('calendar-year-select');
-
-    if (!monthSelect || !yearSelect) return;
-
-    const selectedMonth = parseInt(monthSelect.value, 10);
-    const selectedYear = parseInt(yearSelect.value, 10);
-
-    if (!isNaN(selectedMonth) && !isNaN(selectedYear)) {
-      calendarCurrentDate = new Date(selectedYear, selectedMonth, 1);
-      renderCalendar();
-    }
-  }
-
   window.handleCalendarDayClick = handleCalendarDayClick;
   window.handleCalendarEventClick = handleCalendarEventClick;
   window.handleCalendarNav = handleCalendarNav;
-  window.handleCalendarSelectChange = handleCalendarSelectChange;
 
   // === GESTIÓN DE EVENTOS ===
   function setupEventListeners() {

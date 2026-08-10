@@ -15,7 +15,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="styles.css?v=13.24.0">
+  <link rel="stylesheet" href="styles.css?v=13.25.0">
 </head>
 <body>
   <div class="app-container">
@@ -153,38 +153,13 @@
 
       <!-- VISTA 2: CALENDARIO ENTERO DE BOLOS -->
       <section id="view-calendario" class="view-section">
-        <div class="view-header" style="margin-bottom: 12px; flex-direction: column; align-items: flex-start; gap: 10px;">
+        <div class="view-header" style="margin-bottom: 12px;">
           <div class="view-title-group" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
             <h2 id="calendar-month-title" style="font-family: var(--font-heading); font-size: 20px;">Julio 2026</h2>
             <div class="calendar-nav-btns" style="display: flex; gap: 6px;">
               <button type="button" id="btn-cal-prev" class="btn btn-outline btn-sm" onclick="handleCalendarNav('prev')" style="padding: 5px 10px;">◀</button>
               <button type="button" id="btn-cal-today" class="btn btn-outline btn-sm" onclick="handleCalendarNav('today')" style="padding: 5px 10px;">Hoy</button>
               <button type="button" id="btn-cal-next" class="btn btn-outline btn-sm" onclick="handleCalendarNav('next')" style="padding: 5px 10px;">▶</button>
-            </div>
-          </div>
-
-          <!-- BARRA DE SELECCIÓN RÁPIDA DE MES Y AÑO EN CALENDARIO -->
-          <div style="display: flex; gap: 10px; width: 100%;">
-            <div style="flex: 1;">
-              <select id="calendar-month-select" class="form-input" onchange="handleCalendarSelectChange()" style="padding: 6px 10px; font-size: 13px; border-radius: var(--radius-sm);">
-                <option value="0">Enero</option>
-                <option value="1">Febrero</option>
-                <option value="2">Marzo</option>
-                <option value="3">Abril</option>
-                <option value="4">Mayo</option>
-                <option value="5">Junio</option>
-                <option value="6">Julio</option>
-                <option value="7">Agosto</option>
-                <option value="8">Septiembre</option>
-                <option value="9">Octubre</option>
-                <option value="10">Noviembre</option>
-                <option value="11">Diciembre</option>
-              </select>
-            </div>
-            <div style="flex: 1;">
-              <select id="calendar-year-select" class="form-input" onchange="handleCalendarSelectChange()" style="padding: 6px 10px; font-size: 13px; border-radius: var(--radius-sm);">
-                <!-- Años generados dinámicamente por JS -->
-              </select>
             </div>
           </div>
         </div>
@@ -716,7 +691,7 @@
   <!-- Google Identity Services: inicio de sesión sin popup ni redirección de página completa -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <script src="app.js?v=16.24.0"></script>
+  <script src="app.js?v=16.25.0"></script>
   <script>
     // En entorno local (localhost / 127.0.0.1 / file://), limpiar cache y Service Workers antiguos para ver cambios al instante
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' || !window.location.hostname) {

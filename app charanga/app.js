@@ -1892,23 +1892,13 @@
 
     kmInput.addEventListener('input', updateGasCalc);
 
-    // AUTO CÁLCULO DE KM AL ESCRIBIR EL NOMBRE DEL PUEBLO O PULSAR BOTÓN
+    // AUTO CÁLCULO DE KM AL ESCRIBIR EL NOMBRE DEL PUEBLO
     const boloNameInput = document.getElementById('bolo-name');
-    const btnCalcKm = document.getElementById('btn-calc-km');
 
     if (boloNameInput) {
       boloNameInput.addEventListener('change', () => triggerAutoKmCalculation(false));
       boloNameInput.addEventListener('blur', () => {
-        if (!document.getElementById('bolo-km').value) {
-          triggerAutoKmCalculation(false);
-        }
-      });
-    }
-
-    if (btnCalcKm) {
-      btnCalcKm.addEventListener('click', (e) => {
-        e.preventDefault();
-        triggerAutoKmCalculation(true);
+        triggerAutoKmCalculation(false);
       });
     }
 

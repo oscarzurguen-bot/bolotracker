@@ -2231,8 +2231,9 @@
         const townLat = parseFloat(data[0].lat);
         const townLng = parseFloat(data[0].lon);
 
-        let originLat = 40.965;
-        let originLng = -5.664;
+        // Coordenadas de salida de carretera de Salamanca (coincidentes con la ruta de Google Maps)
+        let originLat = 40.9631;
+        let originLng = -5.6630;
         let originLabel = 'Salamanca';
 
         if (customOrigin && typeof customOrigin === 'object') {
@@ -2243,7 +2244,7 @@
           originLabel = state.homeOriginName;
         }
 
-        // 2. Ruta por carretera real con OSRM Driving Router
+        // 2. Ruta por carretera real con OSRM Driving Router (OpenStreetMap / Maps engine)
         try {
           const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${townLng},${townLat}?overview=false`;
           const osrmRes = await fetch(osrmUrl);
@@ -2256,10 +2257,11 @@
             return { km: kmRoundTrip, oneWayKm: Math.round(kmOneWay), originLabel };
           }
         } catch (osrmErr) {
-          console.warn('OSRM router offline, fallback to Haversine * 1.30:', osrmErr);
+          console.warn('OSRM router offline, fallback to Haversine * 1.12:', osrmErr);
         }
 
-        const haversineKm = calcHaversineDistanceKm(originLat, originLng, townLat, townLng) * 1.30;
+        // Factor de curvatura medio de carreteras españolas (1.12 - 1.15)
+        const haversineKm = calcHaversineDistanceKm(originLat, originLng, townLat, townLng) * 1.12;
         const kmRoundTrip = Math.round(haversineKm * 2);
         return { km: kmRoundTrip, oneWayKm: Math.round(haversineKm), originLabel };
       }

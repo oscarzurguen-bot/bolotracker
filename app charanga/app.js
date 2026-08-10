@@ -1142,6 +1142,7 @@
     let paidCount = 0;
     let pendingTotal = 0;
     let totalKm = 0;
+    let totalMusicHours = 0;
     let instCounts = {};
     let charangaCounts = {};
     let townMap = {};
@@ -1159,6 +1160,20 @@
 
       if (b.hasCar && b.km) {
         totalKm += parseFloat(b.km) || 0;
+      }
+
+      // HORAS DE MÚSICA EN BOLOS FINALIZADOS (pendientes + cobrados)
+      if (b.status === 'pending' || b.status === 'paid') {
+        let bHours = parseFloat(b.hours) || 0;
+        if (!bHours && b.startTime && b.endTime) {
+          const [sH, sM] = b.startTime.split(':').map(Number);
+          const [eH, eM] = b.endTime.split(':').map(Number);
+          let sMins = sH * 60 + sM;
+          let eMins = eH * 60 + eM;
+          if (eMins <= sMins) eMins += 24 * 60;
+          bHours = Math.round(((eMins - sMins) / 60) * 10) / 10;
+        }
+        totalMusicHours += bHours;
       }
 
       const instName = b.instrument || 'Caja';
@@ -1205,6 +1220,14 @@
     if (kmEl) kmEl.textContent = `${totalKm.toLocaleString('es-ES')} km`;
     const finTownsEl = document.getElementById('fin-towns-count');
     if (finTownsEl) finTownsEl.textContent = `${uniqueTownsCount} ${uniqueTownsCount === 1 ? 'pueblo' : 'pueblos'}`;
+
+    const finHoursEl = document.getElementById('fin-total-hours');
+    if (finHoursEl) {
+      const formattedHours = (totalMusicHours % 1 === 0) 
+        ? totalMusicHours.toString() 
+        : totalMusicHours.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      finHoursEl.textContent = `${formattedHours} h`;
+    }
 
     // RENDERIZAR PASAPORTE DE GIRA (SELLOS DE PUEBLOS)
     const townsCountBadge = document.getElementById('towns-count');
@@ -2166,6 +2189,10 @@
         if (menu) menu.classList.add('hidden');
         return;
       }
+      const now = new Date();
+      bolo.paidDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    } else if (newStatus !== 'paid') {
+      delete bolo.paidDate;
     }
 
     bolo.status = newStatus;
@@ -2465,20 +2492,36 @@
       const gasAmount = hasCar ? Math.round(parseFloat(gasCalcInput ? gasCalcInput.value : '') || 0) : 0;
       const notes = document.getElementById('bolo-notes').value.trim();
 
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
       if (id) {
         // Modificar existente
         const index = state.bolos.findIndex(b => b.id === id);
         if (index !== -1) {
+          const prevBolo = state.bolos[index];
+          let paidDate = prevBolo.paidDate;
+          if (status === 'paid' && (!paidDate || prevBolo.status !== 'paid')) {
+            paidDate = todayStr;
+          } else if (status !== 'paid') {
+            paidDate = null;
+          }
+
           state.bolos[index] = {
-            ...state.bolos[index],
-            name, type, date, startTime, endTime, hours, time, price, status, charanga, instrument, hasCar, km, gasAmount, notes
+            ...prevBolo,
+            name, type, date, startTime, endTime, hours, time, price, status, paidDate, charanga, instrument, hasCar, km, gasAmount, notes
           };
         }
       } else {
         // Crear nuevo
+        let paidDate = null;
+        if (status === 'paid') {
+          paidDate = todayStr;
+        }
+
         const newBolo = {
           id: Date.now().toString(),
-          name, type, date, startTime, endTime, hours, time, price, status, charanga, instrument, hasCar, km, gasAmount, notes
+          name, type, date, startTime, endTime, hours, time, price, status, paidDate, charanga, instrument, hasCar, km, gasAmount, notes
         };
         state.bolos.push(newBolo);
       }
@@ -2554,6 +2597,11 @@
         <div class="detail-row"><span class="detail-icon">📅</span> <strong>Fecha:</strong> ${formatDateStr(bolo.date)}</div>
         ${timeInfo ? `<div class="detail-row"><span class="detail-icon">⏱️</span> <strong>Horario:</strong> ${timeInfo}</div>` : ''}
         <div class="detail-row"><span class="detail-icon">💰</span> <strong>Caché:</strong> ${formatCurrency(parseFloat(bolo.price) || 0)}</div>
+        ${bolo.status === 'paid' ? `
+          <div class="detail-row" style="color: var(--text-success);">
+            <span class="detail-icon">🗓️</span> <strong>Fecha de cobro:</strong> ${formatDateStr(bolo.paidDate || bolo.date)}
+          </div>
+        ` : ''}
 
         ${bolo.hasCar ? `
           <div class="detail-row" style="color: var(--status-cyan);">

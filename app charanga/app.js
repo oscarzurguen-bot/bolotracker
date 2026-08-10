@@ -1381,7 +1381,7 @@
           const activeCount = paidCount + pendingCount;
 
           return `
-            <div class="charanga-panel-card">
+            <div class="charanga-panel-card" onclick="openGroupDetailModal('${escapeHtml(chName)}')" style="cursor: pointer;" title="Ver todos los bolos de ${escapeHtml(chName)}">
               <div class="charanga-panel-header">
                 <div class="charanga-panel-title">
                   <span>🎶</span> <span>${escapeHtml(chName)}</span>
@@ -1545,6 +1545,118 @@
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
   }
+
+  // === MODAL DETALLE DE GRUPO / CHARANGA ===
+  function openGroupDetailModal(groupName) {
+    const modal = document.getElementById('modal-group-detail');
+    const titleEl = document.getElementById('modal-group-title');
+    const bodyEl = document.getElementById('modal-group-body');
+    if (!modal || !titleEl || !bodyEl || !groupName) return;
+
+    titleEl.textContent = `🎶 ${groupName}`;
+
+    // Filtrar todos los bolos de este grupo en estado cobrado o pendiente
+    const groupBolos = state.bolos.filter(b => {
+      const bGroup = b.charanga || (state.myCharangas[0] || 'Charanga');
+      return bGroup === groupName && (b.status === 'paid' || b.status === 'pending');
+    }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    let paidCount = 0;
+    let paidTotal = 0;
+    let pendingCount = 0;
+    let pendingTotal = 0;
+
+    groupBolos.forEach(b => {
+      const price = parseFloat(b.price) || 0;
+      const gasMoney = getBoloGasAmount(b);
+      const total = price + gasMoney;
+      if (b.status === 'paid') {
+        paidCount++;
+        paidTotal += total;
+      } else if (b.status === 'pending') {
+        pendingCount++;
+        pendingTotal += total;
+      }
+    });
+
+    let html = `
+      <div class="finance-overview-card" style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px;">
+          <strong style="font-size: 15px; color: var(--text-title);">Resumen de ${escapeHtml(groupName)}</strong>
+          <span class="charanga-badge-count" style="${charangaColorStyle(groupName)}">${groupBolos.length} ${groupBolos.length === 1 ? 'bolo' : 'bolos'}</span>
+        </div>
+        <div class="charanga-panel-body">
+          <div class="charanga-metric-box paid">
+            <div class="metric-head">
+              <span>✅ Cobrados (${paidCount})</span>
+            </div>
+            <div class="metric-amount">${formatCurrency(paidTotal)}</div>
+          </div>
+          <div class="charanga-metric-box pending">
+            <div class="metric-head">
+              <span>⏳ Pendientes (${pendingCount})</span>
+            </div>
+            <div class="metric-amount">${formatCurrency(pendingTotal)}</div>
+          </div>
+        </div>
+      </div>
+
+      <h4 style="font-family: var(--font-heading); font-size: 14px; color: var(--text-title); margin-bottom: 10px;">
+        📋 Bolos realizados con este grupo (${groupBolos.length})
+      </h4>
+    `;
+
+    if (groupBolos.length === 0) {
+      html += `
+        <div style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 13px;">
+          🎶 No hay bolos cobrados o pendientes registrados con este grupo.
+        </div>
+      `;
+    } else {
+      html += `<div class="items-list">` + groupBolos.map(b => {
+        const cachePrice = parseFloat(b.price) || 0;
+        const gasMoney = getBoloGasAmount(b);
+        const totalBolo = cachePrice + gasMoney;
+        const isPaid = b.status === 'paid';
+        const timeStr = b.startTime ? `${b.startTime}${b.endTime ? ' - ' + b.endTime : ''}` : (b.time ? b.time + 'h' : '');
+
+        return `
+          <div class="item-card" data-bolo-id="${b.id}" onclick="closeModal('modal-group-detail'); openBoloDetail('${b.id}')" style="cursor: pointer;">
+            <div class="item-top-row">
+              <h3 class="item-title">📍 ${escapeHtml(b.name || 'Bolo')}</h3>
+              <span class="status-badge ${isPaid ? 'paid' : 'pending'}">
+                ${isPaid ? '✅ Cobrado' : '⏳ Pendiente'}
+              </span>
+            </div>
+
+            <div class="item-meta">
+              <span>📅 ${formatDateStr(b.date)}${timeStr ? ' (' + timeStr + ')' : ''}</span>
+            </div>
+
+            <div class="item-pills-row">
+              <span class="pill-info">🎉 ${escapeHtml(b.type || 'Actuación')}</span>
+              ${b.hasCar ? `<span class="pill-info pill-car">🚗 ${b.km} km (${formatCurrency(gasMoney)})</span>` : ''}
+            </div>
+
+            <div class="item-footer">
+              <div class="footer-prices-left">
+                <span class="price-cache-muted">Caché: ${formatCurrency(cachePrice)}</span>
+                ${gasMoney > 0 ? `<span class="price-gas-blue">+${formatCurrency(gasMoney)}</span>` : ''}
+              </div>
+              <span class="price-total-highlight ${b.status}">${formatCurrency(totalBolo)}</span>
+            </div>
+          </div>
+        `;
+      }).join('') + `</div>`;
+    }
+
+    bodyEl.innerHTML = html;
+
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+
+  window.openGroupDetailModal = openGroupDetailModal;
 
   function openModal(modalId) {
     if (!modalId) return;

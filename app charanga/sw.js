@@ -1,9 +1,9 @@
-const CACHE_NAME = 'bolotracker-v16.33.0';
+const CACHE_NAME = 'bolotracker-v16.34.0';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=13.33.0',
-  './app.js?v=16.33.0',
+  './styles.css?v=13.34.0',
+  './app.js?v=16.34.0',
   './manifest.json',
   './logo.png',
   './trombon.png',

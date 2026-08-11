@@ -1652,8 +1652,7 @@
 
     bodyEl.innerHTML = html;
 
-    modal.classList.remove('hidden');
-    modal.style.display = 'flex';
+    openModal('modal-group-detail');
   }
 
   window.openGroupDetailModal = openGroupDetailModal;

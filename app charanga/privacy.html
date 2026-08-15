@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidad - BoloTracker</title>
+<meta name="theme-color" content="#0F1017">
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-dark: #0F1017;
+    --bg-card: #181A26;
+    --border-color: #2E334D;
+    --text-main: #F3F4F6;
+    --text-title: #FFFFFF;
+    --text-muted: #9CA3AF;
+    --primary-gold: #F59E0B;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 64px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .brand img {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+  .brand span {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--text-title);
+  }
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    color: var(--text-title);
+    margin: 24px 0 4px;
+  }
+  .updated {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 28px;
+  }
+  h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    color: var(--primary-gold);
+    margin: 32px 0 10px;
+  }
+  p, li {
+    color: var(--text-main);
+    font-size: 0.96rem;
+  }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  a { color: var(--primary-gold); }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-top: 32px;
+  }
+  .back {
+    display: inline-block;
+    margin-top: 28px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .back:hover { color: var(--primary-gold); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <img src="logo.png" alt="BoloTracker">
+    <span>BoloTracker</span>
+  </div>
+
+  <h1>Política de Privacidad</h1>
+  <p class="updated">Última actualización: 15 de agosto de 2026</p>
+
+  <p>BoloTracker es una aplicación personal para la gestión de bolos (actuaciones), cobros y gastos de gasolina de charangas y músicos. Esta política explica qué datos se recogen al usar la app, cómo se utilizan y qué derechos tienes sobre ellos.</p>
+
+  <h2>1. Responsable del tratamiento</h2>
+  <p>BoloTracker es desarrollada y mantenida por un desarrollador independiente. Para cualquier consulta sobre esta política o tus datos, puedes escribir a <a href="mailto:oscarzurguen@gmail.com">oscarzurguen@gmail.com</a>.</p>
+
+  <h2>2. Qué datos recopilamos</h2>
+  <ul>
+    <li><strong>Datos de tu cuenta de Google (solo si inicias sesión):</strong> nombre, correo electrónico y foto de perfil, proporcionados por Google al iniciar sesión. Se usan únicamente para identificar tu cuenta y vincularla a tus datos guardados en la nube.</li>
+    <li><strong>Datos que introduces tú mismo en la app:</strong> tus bolos (fechas, localidades, importes cobrados, gastos de gasolina), nombres de tus grupos/charangas, miembros habituales, instrumentos y tarifas. Son datos de uso estrictamente personal para gestionar tu actividad como músico.</li>
+    <li><strong>Datos técnicos mínimos:</strong> si ocurre un error en la app, se guarda un mensaje de diagnóstico en el almacenamiento local de tu propio dispositivo para ayudar a solucionar problemas. Este registro no se envía automáticamente a ningún servidor externo.</li>
+  </ul>
+  <p>BoloTracker no procesa pagos reales: los importes que registras son anotaciones para tu propio control, no transacciones. La app no incluye anuncios ni SDKs de analítica o publicidad, y no realiza seguimiento de tu actividad con fines comerciales.</p>
+
+  <h2>3. Dónde se almacenan tus datos</h2>
+  <ul>
+    <li><strong>En tu dispositivo:</strong> la app guarda tus datos localmente para que funcione sin conexión.</li>
+    <li><strong>En la nube (opcional):</strong> si inicias sesión con Google, tus datos se sincronizan y almacenan en Cloud Firestore (Google Cloud / Firebase), asociados únicamente a tu cuenta, para que puedas acceder a ellos desde varios dispositivos.</li>
+  </ul>
+
+  <h2>4. Con quién compartimos datos</h2>
+  <p>No vendemos ni compartimos tus datos con terceros con fines comerciales o publicitarios. Utilizamos los siguientes proveedores únicamente como infraestructura técnica, que procesan los datos conforme a sus propias políticas de privacidad:</p>
+  <ul>
+    <li><strong>Google Firebase / Google Cloud (Google LLC):</strong> inicio de sesión y almacenamiento en la nube.</li>
+    <li><strong>Google Fonts:</strong> al cargar la app se solicitan tipografías desde los servidores de Google, lo que implica que tu dirección IP se comparte con Google en ese momento.</li>
+  </ul>
+
+  <h2>5. Seguridad</h2>
+  <p>Todas las conexiones se realizan mediante HTTPS. El acceso a tus datos en la nube está protegido por tu cuenta de Google y por reglas de seguridad de Firestore que restringen el acceso de cada usuario a sus propios datos.</p>
+
+  <h2>6. Conservación de tus datos</h2>
+  <p>Tus datos se conservan mientras uses la app o mantengas tu cuenta activa. Puedes borrar todos tus datos locales en cualquier momento desde <em>Ajustes → Borrar Todos los Datos</em>, o solicitar la eliminación de tus datos en la nube escribiendo al contacto indicado arriba.</p>
+
+  <h2>7. Tus derechos</h2>
+  <p>Si resides en el Espacio Económico Europeo o en una jurisdicción con normativa equivalente (por ejemplo, el RGPD), tienes derecho a acceder, rectificar, eliminar o exportar tus datos, así como a oponerte o limitar su tratamiento. Puedes ejercer estos derechos escribiendo a <a href="mailto:oscarzurguen@gmail.com">oscarzurguen@gmail.com</a>.</p>
+
+  <h2>8. Menores de edad</h2>
+  <p>BoloTracker no está dirigida a menores de 14 años y no recopila conscientemente datos de menores de esa edad.</p>
+
+  <h2>9. Cambios en esta política</h2>
+  <p>Esta política puede actualizarse ocasionalmente. La fecha de "última actualización" al principio de este documento refleja la versión vigente; te recomendamos revisarla de vez en cuando.</p>
+
+  <div class="card">
+    <strong>Contacto</strong>
+    <p style="margin-bottom:0;">¿Dudas sobre tus datos o esta política? Escribe a <a href="mailto:oscarzurguen@gmail.com">oscarzurguen@gmail.com</a>.</p>
+  </div>
+
+  <a class="back" href="index.html">← Volver a BoloTracker</a>
+</div>
+</body>
+</html>

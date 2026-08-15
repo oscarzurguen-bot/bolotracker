@@ -1367,14 +1367,13 @@
           charBolos.forEach(b => {
             const cachePrice = parseFloat(b.price) || 0;
             const gasMoney = getBoloGasAmount(b);
-            const total = cachePrice + gasMoney;
 
             if (b.status === 'paid') {
               paidCount++;
-              paidMoney += total;
+              paidMoney += cachePrice;
             } else if (b.status === 'pending') {
               pendingCount++;
-              pendingMoney += total;
+              pendingMoney += cachePrice + gasMoney;
             }
           });
 

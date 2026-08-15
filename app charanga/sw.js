@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bolotracker-v16.36.0';
+const CACHE_NAME = 'bolotracker-v16.37.0';
 const ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,8 @@ const ASSETS = [
   './manifest.json',
   './logo.png',
   './trombon.png',
-  './bombardino.png'
+  './bombardino.png',
+  './privacy.html'
 ];
 
 self.addEventListener('install', (event) => {

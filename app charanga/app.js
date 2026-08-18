@@ -948,7 +948,79 @@
     'malaga': { province: 'Málaga', region: 'Andalucía', isCapital: true },
     'málaga': { province: 'Málaga', region: 'Andalucía', isCapital: true },
     'granada': { province: 'Granada', region: 'Andalucía', isCapital: true },
-    'cordoba': { province: 'Córdoba', region: 'Andalucía', isCapital: true }
+    'cordoba': { province: 'Córdoba', region: 'Andalucía', isCapital: true },
+    'almeria': { province: 'Almería', region: 'Andalucía', isCapital: true },
+    'almería': { province: 'Almería', region: 'Andalucía', isCapital: true },
+    'jaen': { province: 'Jaén', region: 'Andalucía', isCapital: true },
+    'jaén': { province: 'Jaén', region: 'Andalucía', isCapital: true },
+    'huelva': { province: 'Huelva', region: 'Andalucía', isCapital: true },
+    'cadiz': { province: 'Cádiz', region: 'Andalucía', isCapital: true },
+    'cádiz': { province: 'Cádiz', region: 'Andalucía', isCapital: true },
+
+    // Galicia
+    'a coruna': { province: 'A Coruña', region: 'Galicia', isCapital: true },
+    'a coruña': { province: 'A Coruña', region: 'Galicia', isCapital: true },
+    'coruna': { province: 'A Coruña', region: 'Galicia', isCapital: true },
+    'coruña': { province: 'A Coruña', region: 'Galicia', isCapital: true },
+    'santiago de compostela': { province: 'A Coruña', region: 'Galicia' },
+    'lugo': { province: 'Lugo', region: 'Galicia', isCapital: true },
+    'ourense': { province: 'Ourense', region: 'Galicia', isCapital: true },
+    'orense': { province: 'Ourense', region: 'Galicia', isCapital: true },
+    'pontevedra': { province: 'Pontevedra', region: 'Galicia', isCapital: true },
+    'vigo': { province: 'Pontevedra', region: 'Galicia' },
+
+    // Asturias y Cantabria
+    'oviedo': { province: 'Asturias', region: 'Principado de Asturias', isCapital: true },
+    'gijon': { province: 'Asturias', region: 'Principado de Asturias' },
+    'gijón': { province: 'Asturias', region: 'Principado de Asturias' },
+    'santander': { province: 'Cantabria', region: 'Cantabria', isCapital: true },
+
+    // País Vasco y Navarra
+    'vitoria': { province: 'Álava', region: 'País Vasco', isCapital: true },
+    'vitoria-gasteiz': { province: 'Álava', region: 'País Vasco', isCapital: true },
+    'gasteiz': { province: 'Álava', region: 'País Vasco', isCapital: true },
+    'san sebastian': { province: 'Guipúzcoa', region: 'País Vasco', isCapital: true },
+    'san sebastián': { province: 'Guipúzcoa', region: 'País Vasco', isCapital: true },
+    'donostia': { province: 'Guipúzcoa', region: 'País Vasco', isCapital: true },
+    'bilbao': { province: 'Vizcaya', region: 'País Vasco', isCapital: true },
+    'pamplona': { province: 'Navarra', region: 'Comunidad Foral de Navarra', isCapital: true },
+    'iruna': { province: 'Navarra', region: 'Comunidad Foral de Navarra', isCapital: true },
+    'iruña': { province: 'Navarra', region: 'Comunidad Foral de Navarra', isCapital: true },
+
+    // La Rioja y Aragón
+    'logrono': { province: 'La Rioja', region: 'La Rioja', isCapital: true },
+    'logroño': { province: 'La Rioja', region: 'La Rioja', isCapital: true },
+    'zaragoza': { province: 'Zaragoza', region: 'Aragón', isCapital: true },
+    'huesca': { province: 'Huesca', region: 'Aragón', isCapital: true },
+    'teruel': { province: 'Teruel', region: 'Aragón', isCapital: true },
+
+    // Cataluña
+    'barcelona': { province: 'Barcelona', region: 'Cataluña', isCapital: true },
+    'girona': { province: 'Girona', region: 'Cataluña', isCapital: true },
+    'gerona': { province: 'Girona', region: 'Cataluña', isCapital: true },
+    'lleida': { province: 'Lleida', region: 'Cataluña', isCapital: true },
+    'lerida': { province: 'Lleida', region: 'Cataluña', isCapital: true },
+    'tarragona': { province: 'Tarragona', region: 'Cataluña', isCapital: true },
+
+    // Comunidad Valenciana y Murcia
+    'valencia': { province: 'Valencia', region: 'Comunidad Valenciana', isCapital: true },
+    'alicante': { province: 'Alicante', region: 'Comunidad Valenciana', isCapital: true },
+    'castellon': { province: 'Castellón', region: 'Comunidad Valenciana', isCapital: true },
+    'castellon de la plana': { province: 'Castellón', region: 'Comunidad Valenciana', isCapital: true },
+    'castellón': { province: 'Castellón', region: 'Comunidad Valenciana', isCapital: true },
+    'castellón de la plana': { province: 'Castellón', region: 'Comunidad Valenciana', isCapital: true },
+    'murcia': { province: 'Murcia', region: 'Región de Murcia', isCapital: true },
+
+    // Baleares y Canarias
+    'palma': { province: 'Baleares', region: 'Islas Baleares', isCapital: true },
+    'palma de mallorca': { province: 'Baleares', region: 'Islas Baleares', isCapital: true },
+    'ibiza': { province: 'Baleares', region: 'Islas Baleares' },
+    'mahon': { province: 'Baleares', region: 'Islas Baleares' },
+    'mahón': { province: 'Baleares', region: 'Islas Baleares' },
+    'las palmas': { province: 'Las Palmas', region: 'Canarias', isCapital: true },
+    'las palmas de gran canaria': { province: 'Las Palmas', region: 'Canarias', isCapital: true },
+    'santa cruz de tenerife': { province: 'Santa Cruz de Tenerife', region: 'Canarias', isCapital: true },
+    'tenerife': { province: 'Santa Cruz de Tenerife', region: 'Canarias' }
   };
 
   // MAPA DE REGIONES POR PROVINCIA DE ESPAÑA
@@ -1006,7 +1078,7 @@
   };
 
   function getTownLocationInfo(townName) {
-    if (!townName) return { region: 'Castilla y León', province: 'Salamanca', isCapital: false };
+    if (!townName) return { region: 'Otras Localidades', province: 'Otras Localidades', isCapital: false };
 
     const raw = String(townName).trim();
     const lower = raw.toLowerCase();
@@ -1036,7 +1108,8 @@
       const words = clean.split(/\s+/).filter(w => w.length >= 4);
       for (const key in SPAIN_TOWNS_MAP) {
         const keyClean = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-        if (clean === keyClean || clean.includes(keyClean) || keyClean.includes(clean)) {
+        const longEnough = clean.length >= 4 && keyClean.length >= 4;
+        if (clean === keyClean || (longEnough && (clean.includes(keyClean) || keyClean.includes(clean)))) {
           res = { ...SPAIN_TOWNS_MAP[key] };
           break;
         }
@@ -1062,9 +1135,9 @@
       }
     }
 
-    // 5. Criterio por defecto fiable para charangas locales: Salamanca (Castilla y León)
+    // 5. Sin coincidencia: no adivinar una provincia concreta, agrupar como "Otras Localidades"
     if (!res) {
-      res = { region: 'Castilla y León', province: 'Salamanca', isCapital: false };
+      res = { region: 'Otras Localidades', province: 'Otras Localidades', isCapital: false };
     }
 
     if (lower.includes('capital') || clean.includes('capital')) {

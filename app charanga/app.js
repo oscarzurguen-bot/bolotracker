@@ -38,7 +38,8 @@
       { name: 'Angel (Bombo)', icon: 'Bombo' },
       { name: 'Sara (Bombardino)', icon: 'Bombardino' }
     ],
-    currentFilter: 'upcoming',
+    currentFilter: 'upcoming', // estado: 'upcoming' | 'pending' | 'paid' | 'car' | null (todos, solo si hay grupo)
+    currentGroupFilter: null, // nombre del grupo o null (todos los grupos)
     currentView: 'list', // 'list' | 'calendar'
     calendarDate: new Date(),
     editingBoloMembers: [],
@@ -229,7 +230,10 @@
 
   // === RENDERIZADO GLOBAL ===
   function renderAll() {
-    if (!state.currentFilter) state.currentFilter = 'upcoming';
+    if (state.currentGroupFilter && !state.myCharangas.includes(state.currentGroupFilter)) {
+      state.currentGroupFilter = null;
+    }
+    if (!state.currentFilter && !state.currentGroupFilter) state.currentFilter = 'upcoming';
     renderCharangasSettings();
     renderCharangaRadios();
     renderFilterChips();
@@ -542,22 +546,34 @@
       <button class="chip-filter ${state.currentFilter === 'paid' ? 'active' : ''}" data-filter="paid">✅ Cobrados</button>
     `;
 
-    state.myCharangas.forEach(ch => {
-      const isActive = state.currentFilter === ch;
-      html += `<button class="chip-filter ${isActive ? 'active' : ''}" data-filter="${escapeHtml(ch)}">🎶 ${escapeHtml(ch)}</button>`;
-    });
-
     html += `
       <button class="chip-filter ${state.currentFilter === 'car' ? 'active' : ''}" data-filter="car">🚗 Con coche</button>
     `;
 
+    state.myCharangas.forEach(ch => {
+      const isActive = state.currentGroupFilter === ch;
+      html += `<button class="chip-filter chip-group ${isActive ? 'active' : ''}" data-group="${escapeHtml(ch)}">🎶 ${escapeHtml(ch)}</button>`;
+    });
+
     container.innerHTML = html;
 
+    // Estado y grupo son combinables: se puede tener un estado + un grupo activos a la vez.
+    // Pulsar un chip activo lo desmarca (el de estado solo si queda un grupo seleccionado).
     container.querySelectorAll('.chip-filter').forEach(btn => {
       btn.addEventListener('click', () => {
-        container.querySelectorAll('.chip-filter').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        state.currentFilter = btn.getAttribute('data-filter');
+        const group = btn.getAttribute('data-group');
+        if (group !== null) {
+          state.currentGroupFilter = state.currentGroupFilter === group ? null : group;
+          if (!state.currentGroupFilter && !state.currentFilter) state.currentFilter = 'upcoming';
+        } else {
+          const filter = btn.getAttribute('data-filter');
+          if (state.currentFilter === filter) {
+            if (state.currentGroupFilter) state.currentFilter = null;
+          } else {
+            state.currentFilter = filter;
+          }
+        }
+        renderFilterChips();
         renderBolosList();
       });
     });
@@ -597,24 +613,25 @@
     }
 
     // Normalizar filtro actual
-    if (!state.currentFilter || state.currentFilter === 'all') {
+    if (state.currentFilter === 'all' || (!state.currentFilter && !state.currentGroupFilter)) {
       state.currentFilter = 'upcoming';
     }
 
-    // Filtrar bolos de forma limpia y robusta
-    let filtered = [];
+    // Filtrar bolos de forma limpia y robusta (estado + grupo combinables)
+    let filtered = state.bolos;
     if (state.currentFilter === 'upcoming') {
-      filtered = state.bolos.filter(b => (b.status || 'pending') === 'upcoming');
+      filtered = filtered.filter(b => (b.status || 'pending') === 'upcoming');
     } else if (state.currentFilter === 'pending') {
-      filtered = state.bolos.filter(b => (b.status || 'pending') === 'pending');
+      filtered = filtered.filter(b => (b.status || 'pending') === 'pending');
     } else if (state.currentFilter === 'paid') {
-      filtered = state.bolos.filter(b => (b.status || 'pending') === 'paid');
+      filtered = filtered.filter(b => (b.status || 'pending') === 'paid');
     } else if (state.currentFilter === 'car') {
-      filtered = state.bolos.filter(b => Boolean(b.hasCar));
-    } else {
-      // Filtro por charanga / grupo específico
-      filtered = state.bolos.filter(b => b.charanga === state.currentFilter);
+      filtered = filtered.filter(b => Boolean(b.hasCar));
     }
+    if (state.currentGroupFilter) {
+      filtered = filtered.filter(b => b.charanga === state.currentGroupFilter);
+    }
+    filtered = filtered.slice();
 
     // Ordenación inteligente según filtro
     try {
@@ -2072,15 +2089,7 @@
       btnSaveLoc.addEventListener('click', saveTownLocationOverride);
     }
 
-    // FILTROS DE CHIPS
-    document.querySelectorAll('.chip-filter').forEach(chip => {
-      chip.addEventListener('click', () => {
-        document.querySelectorAll('.chip-filter').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        state.currentFilter = chip.getAttribute('data-filter');
-        renderBolosList();
-      });
-    });
+    // FILTROS DE CHIPS: los listeners se asignan en renderFilterChips()
 
     // DELEGACIÓN CLICS EN LISTA BOLOS (VER DETALLE BOLO)
     const bolosContainer = document.getElementById('bolos-list');
@@ -2244,8 +2253,8 @@
           state.bolos.forEach(b => {
             if (b.charanga === originalName) b.charanga = newName;
           });
-          if (state.currentFilter === originalName) {
-            state.currentFilter = newName;
+          if (state.currentGroupFilter === originalName) {
+            state.currentGroupFilter = newName;
           }
         }
 

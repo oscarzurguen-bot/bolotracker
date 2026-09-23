@@ -1737,7 +1737,7 @@
       const tAll = totals(bolos);
 
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pageW = doc.internal.pageSize.getWidth();
       const margin = 14;
       const gold = [217, 119, 6];
@@ -1764,17 +1764,17 @@
       // Resumen
       const boxY = 33;
       const boxH = 30;
-      const gap = 5;
+      const gap = 4;
       const boxW = (pageW - margin * 2 - gap * 2) / 3;
       const drawBox = (x, title, color, lines) => {
         doc.setDrawColor(...color);
         doc.setLineWidth(0.4);
         doc.roundedRect(x, boxY, boxW, boxH, 2, 2);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
+        doc.setFontSize(9.5);
         doc.setTextColor(...color);
         doc.text(pdfText(title), x + 4, boxY + 7);
-        doc.setFontSize(9);
+        doc.setFontSize(8.5);
         lines.forEach((ln, i) => {
           const y = boxY + 13 + i * 5;
           doc.setFont('helvetica', ln[2] ? 'bold' : 'normal');
@@ -1808,7 +1808,6 @@
         if (b.instrument) parts.push(`Instrumento: ${pdfText(b.instrument)}`);
         const mem = membersOf(b);
         if (mem) parts.push(`Componentes: ${mem}`);
-        if (b.notes) parts.push(`Notas: ${pdfText(b.notes)}`);
         return parts.join('\n') || '-';
       };
       const daysSince = dateStr => {
@@ -1820,40 +1819,43 @@
         return diff >= 0 ? `${diff} ${diff === 1 ? 'día' : 'días'}` : '-';
       };
 
+      // En vertical no caben tantas columnas: el horario va bajo la fecha y el tipo bajo el pueblo
       const baseRow = b => [
-        pdfDate(b.date),
-        pdfText(b.name || 'Bolo'),
-        pdfText(b.type || 'Actuación'),
-        scheduleOf(b),
-        b.hours ? `${b.hours} h` : '-',
+        `${pdfDate(b.date)}
+${scheduleOf(b)}${b.hours ? ` (${b.hours} h)` : ''}`,
+        `${pdfText(b.name || 'Bolo')}
+${pdfText(b.type || 'Actuación')}`,
         kmOf(b) ? `${kmOf(b)} km` : '-',
         pdfMoney(cacheOf(b)),
         getBoloGasAmount(b) ? pdfMoney(getBoloGasAmount(b)) : '-',
         pdfMoney(cacheOf(b) + getBoloGasAmount(b))
       ];
-      const baseHead = ['Fecha', 'Pueblo', 'Tipo', 'Horario', 'Horas', 'Km', 'Caché', 'Gasolina', 'Total'];
+      const baseHead = ['Fecha / horario', 'Pueblo / tipo', 'Km', 'Caché', 'Gasolina', 'Total'];
       const colStyles = {
-        0: { cellWidth: 20 },
-        1: { cellWidth: 32, fontStyle: 'bold' },
-        2: { cellWidth: 24 },
-        3: { cellWidth: 22 },
-        4: { cellWidth: 13, halign: 'right' },
-        5: { cellWidth: 15, halign: 'right' },
-        6: { cellWidth: 18, halign: 'right' },
-        7: { cellWidth: 18, halign: 'right' },
-        8: { cellWidth: 18, halign: 'right', fontStyle: 'bold' },
-        9: { cellWidth: 22 },
-        10: { cellWidth: 'auto' }
+        0: { cellWidth: 27 },
+        1: { cellWidth: 32 },
+        2: { cellWidth: 14, halign: 'right' },
+        3: { cellWidth: 16, halign: 'right' },
+        4: { cellWidth: 17, halign: 'right' },
+        5: { cellWidth: 16, halign: 'right', fontStyle: 'bold' },
+        6: { cellWidth: 19 },
+        7: { cellWidth: 'auto' }
       };
       const tableCommon = {
         margin: { left: margin, right: margin },
-        styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.8, valign: 'top', textColor: dark },
+        styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 1.6, valign: 'top', textColor: dark },
         alternateRowStyles: { fillColor: [247, 245, 240] },
-        columnStyles: colStyles
+        columnStyles: colStyles,
+        didParseCell: data => {
+          // columnStyles no se aplica a la cabecera: alinear también a la derecha las de importes/km
+          if (data.section === 'head' && data.column.index >= 2 && data.column.index <= 5) {
+            data.cell.styles.halign = 'right';
+          }
+        }
       };
       const right = content => ({ content, styles: { halign: 'right' } });
       const footRow = t => [
-        'TOTAL', nBolos(t.count), '', '', right(t.hours ? `${t.hours.toLocaleString('es-ES')} h` : '-'),
+        'TOTAL', nBolos(t.count),
         right(t.km ? `${t.km.toLocaleString('es-ES')} km` : '-'),
         right(pdfMoney(t.cache)), right(pdfMoney(t.gas)), right(pdfMoney(t.cache + t.gas)), '', ''
       ];
@@ -1910,7 +1912,12 @@
             `El pendiente más antiguo es ${pdfText(pending[0].name || 'Bolo')} (${pdfDate(pending[0].date)}), hace ${daysSince(pending[0].date)}.`
           ]
         : ['No queda nada pendiente de cobro en este periodo.'];
-      pendingLines.forEach((ln, i) => doc.text(pdfText(ln), margin, cursorY + 7 + i * 6));
+      let lineY = cursorY + 7;
+      pendingLines.forEach(ln => {
+        const wrapped = doc.splitTextToSize(pdfText(ln), pageW - margin * 2);
+        doc.text(wrapped, margin, lineY);
+        lineY += wrapped.length * 5 + 1;
+      });
 
       // Pie de página con numeración
       const pageCount = doc.internal.getNumberOfPages();

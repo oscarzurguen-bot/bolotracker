@@ -1893,7 +1893,7 @@ ${pdfText(b.type || 'Actuación')}`,
 
       // Tabla de cobrados
       sectionTitle(`Bolos cobrados (${paid.length})`, green, cursorY);
-      drawTable(paid, 'Fecha cobro', b => pdfDate(b.paidDate), tPaid, green, [225, 243, 236], 'No hay bolos cobrados en este periodo.');
+      drawTable(paid, 'Fecha cobro', b => pdfDate(b.paidDate || b.date), tPaid, green, [225, 243, 236], 'No hay bolos cobrados en este periodo.');
 
       // Tabla de pendientes
       if (cursorY > doc.internal.pageSize.getHeight() - 30) { doc.addPage(); cursorY = 18; }

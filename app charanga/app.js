@@ -1443,7 +1443,7 @@
 
             if (b.status === 'paid') {
               paidCount++;
-              paidMoney += cachePrice;
+              paidMoney += cachePrice + gasMoney;
             } else if (b.status === 'pending') {
               pendingCount++;
               pendingMoney += cachePrice + gasMoney;
@@ -1634,7 +1634,9 @@
     }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
     let paidCount = 0;
-    let paidTotal = 0;
+    let paidCache = 0;
+    let paidGas = 0;
+    let paidGasCount = 0;
     let pendingCount = 0;
     let pendingTotal = 0;
 
@@ -1644,7 +1646,9 @@
       const total = price + gasMoney;
       if (b.status === 'paid') {
         paidCount++;
-        paidTotal += total;
+        paidCache += price;
+        paidGas += gasMoney;
+        if (gasMoney > 0) paidGasCount++;
       } else if (b.status === 'pending') {
         pendingCount++;
         pendingTotal += total;
@@ -1660,10 +1664,18 @@
         <div class="charanga-panel-body">
           <div class="charanga-metric-box paid">
             <div class="metric-head">
-              <span>✅ Cobrados (${paidCount})</span>
+              <span>✅ Cobrado (${paidCount})</span>
             </div>
-            <div class="metric-amount">${formatCurrency(paidTotal)}</div>
+            <div class="metric-amount">${formatCurrency(paidCache)}</div>
           </div>
+          <div class="charanga-metric-box gas">
+            <div class="metric-head">
+              <span>⛽ Gasolina (${paidGasCount})</span>
+            </div>
+            <div class="metric-amount">${formatCurrency(paidGas)}</div>
+          </div>
+        </div>
+        <div class="charanga-panel-body" style="grid-template-columns: 1fr; margin-top: 10px;">
           <div class="charanga-metric-box pending">
             <div class="metric-head">
               <span>⏳ Pendientes (${pendingCount})</span>

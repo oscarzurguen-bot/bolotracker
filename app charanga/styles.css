@@ -988,6 +988,18 @@ body {
   color: var(--status-paid);
 }
 
+.charanga-metric-box.gas {
+  border-color: rgba(6, 182, 212, 0.3);
+  background-color: rgba(6, 182, 212, 0.08);
+}
+
+.charanga-metric-box.gas .metric-amount {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 800;
+  color: #06B6D4;
+}
+
 .charanga-metric-box.pending .metric-amount {
   font-family: var(--font-heading);
   font-size: 15px;

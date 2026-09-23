@@ -541,36 +541,35 @@
     if (!container) return;
 
     let html = `
-      <button class="chip-filter ${state.currentFilter === 'upcoming' ? 'active' : ''}" data-filter="upcoming">📅 Próximos</button>
-      <button class="chip-filter ${state.currentFilter === 'pending' ? 'active' : ''}" data-filter="pending">⏳ Pendientes</button>
-      <button class="chip-filter ${state.currentFilter === 'paid' ? 'active' : ''}" data-filter="paid">✅ Cobrados</button>
+      <div class="filter-chips-row">
+        <button class="chip-filter ${state.currentFilter === 'upcoming' ? 'active' : ''}" data-filter="upcoming">📅 Próximos</button>
+        <button class="chip-filter ${state.currentFilter === 'pending' ? 'active' : ''}" data-filter="pending">⏳ Pendientes</button>
+        <button class="chip-filter ${state.currentFilter === 'paid' ? 'active' : ''}" data-filter="paid">✅ Cobrados</button>
+        <button class="chip-filter ${state.currentFilter === 'car' ? 'active' : ''}" data-filter="car">🚗 Con coche</button>
+      </div>
     `;
 
-    html += `
-      <button class="chip-filter ${state.currentFilter === 'car' ? 'active' : ''}" data-filter="car">🚗 Con coche</button>
-    `;
-
-    state.myCharangas.forEach(ch => {
-      const isActive = state.currentGroupFilter === ch;
-      html += `<button class="chip-filter chip-group ${isActive ? 'active' : ''}" data-group="${escapeHtml(ch)}">🎶 ${escapeHtml(ch)}</button>`;
-    });
+    if (state.myCharangas.length > 0) {
+      html += `<div class="filter-chips-row">` + state.myCharangas.map(ch => {
+        const isActive = state.currentGroupFilter === ch;
+        return `<button class="chip-filter chip-group ${isActive ? 'active' : ''}" data-group="${escapeHtml(ch)}">🎶 ${escapeHtml(ch)}</button>`;
+      }).join('') + `</div>`;
+    }
 
     container.innerHTML = html;
 
-    // Estado y grupo son combinables: se puede tener un estado + un grupo activos a la vez.
-    // Pulsar un chip activo lo desmarca (el de estado solo si queda un grupo seleccionado).
+    // Fila 1: estado (siempre uno activo). Fila 2: grupo (opcional, combinable con el estado).
+    // Cambiar de estado quita el grupo seleccionado; pulsar el grupo activo lo desmarca.
     container.querySelectorAll('.chip-filter').forEach(btn => {
       btn.addEventListener('click', () => {
         const group = btn.getAttribute('data-group');
         if (group !== null) {
           state.currentGroupFilter = state.currentGroupFilter === group ? null : group;
-          if (!state.currentGroupFilter && !state.currentFilter) state.currentFilter = 'upcoming';
         } else {
           const filter = btn.getAttribute('data-filter');
-          if (state.currentFilter === filter) {
-            if (state.currentGroupFilter) state.currentFilter = null;
-          } else {
+          if (state.currentFilter !== filter) {
             state.currentFilter = filter;
+            state.currentGroupFilter = null;
           }
         }
         renderFilterChips();

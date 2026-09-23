@@ -1210,22 +1210,7 @@
     }
 
     // Filtrar bolos para las estadísticas según los selectores de año y mes
-    const filteredBolos = state.bolos.filter(b => {
-      if (!b.date) return false;
-      const parts = b.date.split('-');
-      if (parts.length < 3) return false;
-
-      const y = parts[0];
-      const m = parseInt(parts[1], 10);
-
-      if (state.financesFilterYear !== 'all' && y !== state.financesFilterYear) {
-        return false;
-      }
-      if (state.financesFilterMonth !== 'all' && m !== parseInt(state.financesFilterMonth, 10)) {
-        return false;
-      }
-      return true;
-    });
+    const filteredBolos = state.bolos.filter(isBoloInFinancePeriod);
 
     let paidTotal = 0;
     let paidCount = 0;
@@ -1634,6 +1619,323 @@
     modal.style.display = 'flex';
   }
 
+  // ¿Cae el bolo dentro del periodo (año/mes) seleccionado en Estadísticas?
+  function isBoloInFinancePeriod(b) {
+    if (!b.date) return false;
+    const parts = b.date.split('-');
+    if (parts.length < 3) return false;
+
+    const y = parts[0];
+    const m = parseInt(parts[1], 10);
+    const selY = state.financesFilterYear || 'all';
+    const selM = state.financesFilterMonth || 'all';
+
+    if (selY !== 'all' && y !== selY) return false;
+    if (selM !== 'all' && m !== parseInt(selM, 10)) return false;
+    return true;
+  }
+
+  function getFinancePeriodLabel() {
+    const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const selY = state.financesFilterYear || 'all';
+    const selM = state.financesFilterMonth || 'all';
+    if (selY === 'all' && selM === 'all') return 'Todo el historial';
+    const mText = selM !== 'all' ? monthNames[parseInt(selM, 10)] : 'Todos los meses';
+    const yText = selY !== 'all' ? selY : 'todos los años';
+    return `${mText} ${yText}`;
+  }
+
+  // === INFORME PDF DE UN GRUPO ===
+  const PDF_LIB_URLS = [
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'
+  ];
+  let pdfLibsPromise = null;
+
+  function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => { s.remove(); reject(new Error('No se pudo cargar ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function loadPdfLibs() {
+    if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable) return Promise.resolve();
+    if (!pdfLibsPromise) {
+      // autotable necesita que jsPDF esté cargado antes
+      pdfLibsPromise = loadScriptOnce(PDF_LIB_URLS[0])
+        .then(() => loadScriptOnce(PDF_LIB_URLS[1]))
+        .catch(err => { pdfLibsPromise = null; throw err; });
+    }
+    return pdfLibsPromise;
+  }
+
+  // Las fuentes estándar de jsPDF solo cubren Latin-1 (+ €): quitar emojis y demás símbolos
+  function pdfText(val) {
+    return String(val == null ? '' : val)
+      .replace(/[^\u0000-ÿ€]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function pdfDate(dateStr) {
+    if (!dateStr) return '-';
+    const p = dateStr.split('-');
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : dateStr;
+  }
+
+  function pdfMoney(val) {
+    return pdfText(formatCurrency(val).replace(/ | /g, ' '));
+  }
+
+  function getBoloGroupName(b) {
+    return b.charanga || (state.myCharangas[0] || 'Charanga');
+  }
+
+  async function downloadGroupReportPdf(groupName) {
+    const btn = document.getElementById('btn-group-report-pdf');
+    const originalLabel = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Generando PDF...'; }
+
+    try {
+      await loadPdfLibs();
+    } catch (e) {
+      console.warn(e);
+      alert('No se pudo cargar el generador de PDF. Comprueba tu conexión a internet e inténtalo de nuevo.');
+      if (btn) { btn.disabled = false; btn.innerHTML = originalLabel; }
+      return;
+    }
+
+    try {
+      const periodLabel = getFinancePeriodLabel();
+      const bolos = state.bolos
+        .filter(b => getBoloGroupName(b) === groupName && (b.status === 'paid' || b.status === 'pending') && isBoloInFinancePeriod(b))
+        .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.startTime || '').localeCompare(b.startTime || ''));
+
+      const paid = bolos.filter(b => b.status === 'paid');
+      const pending = bolos.filter(b => b.status === 'pending');
+
+      const sumOf = (list, fn) => list.reduce((acc, b) => acc + fn(b), 0);
+      const cacheOf = b => parseFloat(b.price) || 0;
+      const kmOf = b => (b.hasCar && b.km ? parseFloat(b.km) || 0 : 0);
+      const hoursOf = b => parseFloat(b.hours) || 0;
+
+      const totals = list => ({
+        count: list.length,
+        cache: sumOf(list, cacheOf),
+        gas: sumOf(list, getBoloGasAmount),
+        km: sumOf(list, kmOf),
+        hours: sumOf(list, hoursOf)
+      });
+      const nBolos = n => `${n} ${n === 1 ? 'bolo' : 'bolos'}`;
+      const tPaid = totals(paid);
+      const tPending = totals(pending);
+      const tAll = totals(bolos);
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageW = doc.internal.pageSize.getWidth();
+      const margin = 14;
+      const gold = [217, 119, 6];
+      const green = [16, 150, 105];
+      const amber = [200, 120, 0];
+      const dark = [30, 30, 40];
+      const muted = [110, 110, 120];
+
+      // Cabecera
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(...dark);
+      doc.text(pdfText(`Informe de bolos - ${groupName}`), margin, 18);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...muted);
+      const now = new Date();
+      const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+      doc.text(pdfText(`Periodo: ${periodLabel}   |   Generado el ${todayStr} con BoloTracker`), margin, 25);
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(0.6);
+      doc.line(margin, 28, pageW - margin, 28);
+
+      // Resumen
+      const boxY = 33;
+      const boxH = 30;
+      const gap = 5;
+      const boxW = (pageW - margin * 2 - gap * 2) / 3;
+      const drawBox = (x, title, color, lines) => {
+        doc.setDrawColor(...color);
+        doc.setLineWidth(0.4);
+        doc.roundedRect(x, boxY, boxW, boxH, 2, 2);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...color);
+        doc.text(pdfText(title), x + 4, boxY + 7);
+        doc.setFontSize(9);
+        lines.forEach((ln, i) => {
+          const y = boxY + 13 + i * 5;
+          doc.setFont('helvetica', ln[2] ? 'bold' : 'normal');
+          doc.setTextColor(...(ln[2] ? dark : muted));
+          doc.text(pdfText(ln[0]), x + 4, y);
+          doc.text(pdfText(ln[1]), x + boxW - 4, y, { align: 'right' });
+        });
+      };
+      drawBox(margin, `Cobrado (${nBolos(tPaid.count)})`, green, [
+        ['Caché', pdfMoney(tPaid.cache)],
+        ['Gasolina', pdfMoney(tPaid.gas)],
+        ['Total cobrado', pdfMoney(tPaid.cache + tPaid.gas), true]
+      ]);
+      drawBox(margin + boxW + gap, `Pendiente de cobro (${nBolos(tPending.count)})`, amber, [
+        ['Caché', pdfMoney(tPending.cache)],
+        ['Gasolina', pdfMoney(tPending.gas)],
+        ['Total pendiente', pdfMoney(tPending.cache + tPending.gas), true]
+      ]);
+      drawBox(margin + (boxW + gap) * 2, `Total del periodo (${nBolos(tAll.count)})`, gold, [
+        ['Kilómetros', `${tAll.km.toLocaleString('es-ES')} km`],
+        ['Horas tocadas', `${tAll.hours.toLocaleString('es-ES')} h`],
+        ['Total generado', pdfMoney(tAll.cache + tAll.gas), true]
+      ]);
+
+      const scheduleOf = b => b.startTime ? `${b.startTime}${b.endTime ? ' - ' + b.endTime : ''}` : (b.time ? b.time + 'h' : '-');
+      const membersOf = b => (Array.isArray(b.members) ? b.members : [])
+        .map(m => pdfText(typeof m === 'string' ? m : (m && m.name) || ''))
+        .filter(Boolean).join(', ');
+      const detailsOf = b => {
+        const parts = [];
+        if (b.instrument) parts.push(`Instrumento: ${pdfText(b.instrument)}`);
+        const mem = membersOf(b);
+        if (mem) parts.push(`Componentes: ${mem}`);
+        if (b.notes) parts.push(`Notas: ${pdfText(b.notes)}`);
+        return parts.join('\n') || '-';
+      };
+      const daysSince = dateStr => {
+        if (!dateStr) return '-';
+        const p = dateStr.split('-').map(n => parseInt(n, 10));
+        const d = new Date(p[0], p[1] - 1, p[2]);
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const diff = Math.round((today - d) / 86400000);
+        return diff >= 0 ? `${diff} ${diff === 1 ? 'día' : 'días'}` : '-';
+      };
+
+      const baseRow = b => [
+        pdfDate(b.date),
+        pdfText(b.name || 'Bolo'),
+        pdfText(b.type || 'Actuación'),
+        scheduleOf(b),
+        b.hours ? `${b.hours} h` : '-',
+        kmOf(b) ? `${kmOf(b)} km` : '-',
+        pdfMoney(cacheOf(b)),
+        getBoloGasAmount(b) ? pdfMoney(getBoloGasAmount(b)) : '-',
+        pdfMoney(cacheOf(b) + getBoloGasAmount(b))
+      ];
+      const baseHead = ['Fecha', 'Pueblo', 'Tipo', 'Horario', 'Horas', 'Km', 'Caché', 'Gasolina', 'Total'];
+      const colStyles = {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 32, fontStyle: 'bold' },
+        2: { cellWidth: 24 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 13, halign: 'right' },
+        5: { cellWidth: 15, halign: 'right' },
+        6: { cellWidth: 18, halign: 'right' },
+        7: { cellWidth: 18, halign: 'right' },
+        8: { cellWidth: 18, halign: 'right', fontStyle: 'bold' },
+        9: { cellWidth: 22 },
+        10: { cellWidth: 'auto' }
+      };
+      const tableCommon = {
+        margin: { left: margin, right: margin },
+        styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.8, valign: 'top', textColor: dark },
+        alternateRowStyles: { fillColor: [247, 245, 240] },
+        columnStyles: colStyles
+      };
+      const right = content => ({ content, styles: { halign: 'right' } });
+      const footRow = t => [
+        'TOTAL', nBolos(t.count), '', '', right(t.hours ? `${t.hours.toLocaleString('es-ES')} h` : '-'),
+        right(t.km ? `${t.km.toLocaleString('es-ES')} km` : '-'),
+        right(pdfMoney(t.cache)), right(pdfMoney(t.gas)), right(pdfMoney(t.cache + t.gas)), '', ''
+      ];
+
+      // Tabla de bolos, o una línea de texto si no hay ninguno
+      const drawTable = (list, lastHead, lastCell, t, color, footFill, emptyText) => {
+        if (!list.length) {
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(9);
+          doc.setTextColor(...muted);
+          doc.text(pdfText(emptyText), margin, cursorY + 7);
+          cursorY += 17;
+          return;
+        }
+        doc.autoTable({
+          ...tableCommon,
+          startY: cursorY + 3,
+          head: [[...baseHead, lastHead, 'Detalles']],
+          body: list.map(b => [...baseRow(b), lastCell(b), detailsOf(b)]),
+          foot: [footRow(t)],
+          headStyles: { fillColor: color, textColor: 255, fontStyle: 'bold' },
+          footStyles: { fillColor: footFill, textColor: dark, fontStyle: 'bold' }
+        });
+        cursorY = doc.lastAutoTable.finalY + 10;
+      };
+
+      const sectionTitle = (text, color, y) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(...color);
+        doc.text(pdfText(text), margin, y);
+      };
+
+      let cursorY = boxY + boxH + 10;
+
+      // Tabla de cobrados
+      sectionTitle(`Bolos cobrados (${paid.length})`, green, cursorY);
+      drawTable(paid, 'Fecha cobro', b => pdfDate(b.paidDate), tPaid, green, [225, 243, 236], 'No hay bolos cobrados en este periodo.');
+
+      // Tabla de pendientes
+      if (cursorY > doc.internal.pageSize.getHeight() - 30) { doc.addPage(); cursorY = 18; }
+      sectionTitle(`Bolos pendientes de cobro (${pending.length})`, amber, cursorY);
+      drawTable(pending, 'Sin cobrar', b => daysSince(b.date), tPending, amber, [252, 241, 222], 'No hay bolos pendientes en este periodo.');
+
+      // Resumen final de lo pendiente
+      if (cursorY > doc.internal.pageSize.getHeight() - 30) { doc.addPage(); cursorY = 18; }
+      sectionTitle('Resumen de lo pendiente', dark, cursorY);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...dark);
+      const pendingLines = pending.length
+        ? [
+            `${pending.length === 1 ? 'Queda' : 'Quedan'} ${nBolos(pending.length)} por cobrar: ${pdfMoney(tPending.cache)} de caché + ${pdfMoney(tPending.gas)} de gasolina = ${pdfMoney(tPending.cache + tPending.gas)}.`,
+            `El pendiente más antiguo es ${pdfText(pending[0].name || 'Bolo')} (${pdfDate(pending[0].date)}), hace ${daysSince(pending[0].date)}.`
+          ]
+        : ['No queda nada pendiente de cobro en este periodo.'];
+      pendingLines.forEach((ln, i) => doc.text(pdfText(ln), margin, cursorY + 7 + i * 6));
+
+      // Pie de página con numeración
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...muted);
+        const pageH = doc.internal.pageSize.getHeight();
+        doc.text(pdfText(`${groupName} - ${periodLabel}`), margin, pageH - 7);
+        doc.text(`Página ${i} de ${pageCount}`, pageW - margin, pageH - 7, { align: 'right' });
+      }
+
+      const slug = s => pdfText(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+      doc.save(`informe-${slug(groupName)}-${slug(periodLabel)}.pdf`);
+    } catch (e) {
+      console.error('Error generando el informe PDF:', e);
+      alert('Ha ocurrido un error al generar el PDF.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = originalLabel; }
+    }
+  }
+
+  window.downloadGroupReportPdf = downloadGroupReportPdf;
+
   // === MODAL DETALLE DE GRUPO / CHARANGA ===
   function openGroupDetailModal(groupName) {
     const modal = document.getElementById('modal-group-detail');
@@ -1701,6 +2003,13 @@
         </div>
       </div>
 
+      <button type="button" id="btn-group-report-pdf" class="btn btn-primary" style="width: 100%; margin-bottom: 6px;">
+        📄 Descargar informe PDF
+      </button>
+      <p style="text-align: center; font-size: 12px; color: var(--text-muted); margin: 0 0 16px;">
+        Periodo del informe: <strong>${escapeHtml(getFinancePeriodLabel())}</strong> (según el filtro de Estadísticas)
+      </p>
+
       <h4 style="font-family: var(--font-heading); font-size: 14px; color: var(--text-title); margin-bottom: 10px;">
         📋 Bolos realizados con este grupo (${groupBolos.length})
       </h4>
@@ -1751,6 +2060,9 @@
     }
 
     bodyEl.innerHTML = html;
+
+    const pdfBtn = document.getElementById('btn-group-report-pdf');
+    if (pdfBtn) pdfBtn.addEventListener('click', () => downloadGroupReportPdf(groupName));
 
     openModal('modal-group-detail');
   }
